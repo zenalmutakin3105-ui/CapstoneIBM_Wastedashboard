@@ -1,0 +1,2267 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Crisbar Waste Intelligence Dashboard</title>
+<style>
+/* ── Design Tokens ─────────────────────────────────────────────────────────── */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  /* Backgrounds */
+  --bg:        #09101e;
+  --bg-card:   #111c2d;
+  --bg-raised: #162238;
+  --bg-input:  #0e1829;
+  --bg-hover:  #1a2a42;
+  /* Borders */
+  --bd:        #1f2f48;
+  --bd-soft:   #172036;
+  /* Brand */
+  --orange:    #ff793b;
+  --orange-lt: #ff9d6e;
+  --orange-dk: #c0501c;
+  --orange-bg: rgba(255,121,59,.08);
+  /* Accent — turquoise for charts & secondary data */
+  --teal:      #22d3c8;
+  --teal-lt:   #5ee8e0;
+  --teal-bg:   rgba(34,211,200,.08);
+  /* Semantic */
+  --green:     #34d399;
+  --green-bg:  rgba(52,211,153,.08);
+  --red:       #f87171;
+  --red-bg:    rgba(248,113,113,.08);
+  --amber:     #fbbf24;
+  --amber-bg:  rgba(251,191,36,.08);
+  --violet:    #a78bfa;
+  --blue:      #60a5fa;
+  /* Typography */
+  --txt:       #dce6f5;
+  --txt-muted: #7a90b4;
+  --txt-dim:   #3d5070;
+  /* Misc */
+  --radius:    10px;
+  --radius-sm: 6px;
+  --shadow:    0 8px 32px rgba(0,0,0,.55);
+  --shadow-sm: 0 2px 10px rgba(0,0,0,.35);
+}
+
+/* ── Base ──────────────────────────────────────────────────────────────────── */
+html{font-size:14px;scroll-behavior:smooth;-webkit-font-smoothing:antialiased}
+body{
+  background:var(--bg);color:var(--txt);
+  font-family:-apple-system,"Segoe UI",system-ui,sans-serif;
+  line-height:1.55;min-height:100vh;overflow-x:hidden;
+}
+button{
+  cursor:pointer;font-family:inherit;border:none;
+  border-radius:var(--radius-sm);
+  transition:background .18s,color .18s,opacity .18s,box-shadow .18s;
+}
+button:disabled{opacity:.38;cursor:not-allowed}
+input,select{
+  font-family:inherit;font-size:.8125rem;
+  background:var(--bg-input);color:var(--txt);
+  border:1px solid var(--bd);border-radius:var(--radius-sm);
+  padding:.38rem .65rem;transition:border-color .18s,box-shadow .18s;
+}
+input:focus,select:focus{
+  outline:none;border-color:var(--orange);
+  box-shadow:0 0 0 3px rgba(255,121,59,.18);
+}
+select option{background:var(--bg-card)}
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--bd);border-radius:4px}
+::-webkit-scrollbar-thumb:hover{background:var(--txt-dim)}
+
+/* ── App Shell ─────────────────────────────────────────────────────────────── */
+#app{display:flex;flex-direction:column;min-height:100vh}
+
+/* ── Header ────────────────────────────────────────────────────────────────── */
+#header{
+  background:var(--bg-card);
+  border-bottom:1px solid var(--bd);
+  padding:.7rem 1.4rem;
+  display:flex;align-items:center;gap:1rem;flex-wrap:wrap;
+  position:sticky;top:0;z-index:200;
+  box-shadow:0 1px 0 var(--bd),0 4px 24px rgba(0,0,0,.4);
+}
+.brand{display:flex;align-items:center;gap:.7rem;flex:1;min-width:0}
+.brand-logo{
+  width:30px;height:30px;
+  background:linear-gradient(135deg,var(--orange),var(--orange-dk));
+  border-radius:7px;display:flex;align-items:center;justify-content:center;
+  font-weight:900;font-size:.82rem;color:#fff;flex-shrink:0;
+  box-shadow:0 2px 8px rgba(255,121,59,.35);
+}
+.brand h1{
+  font-size:.92rem;font-weight:700;color:var(--txt);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  letter-spacing:.01em;
+}
+.brand h1 span{color:var(--orange)}
+.period-badge,.local-badge{
+  font-size:.7rem;font-weight:600;letter-spacing:.03em;
+  border-radius:20px;padding:.2rem .7rem;white-space:nowrap;flex-shrink:0;
+}
+.period-badge{
+  background:var(--bg-raised);border:1px solid var(--bd);color:var(--txt-muted);
+}
+.local-badge{
+  background:rgba(34,211,200,.1);border:1px solid rgba(34,211,200,.25);
+  color:var(--teal-lt);
+}
+.hdr-actions{display:flex;gap:.45rem;align-items:center}
+.btn{
+  padding:.38rem .95rem;border-radius:var(--radius-sm);
+  font-size:.775rem;font-weight:700;letter-spacing:.03em;cursor:pointer;border:none;
+}
+.btn-primary{
+  background:var(--orange);color:#fff;
+  box-shadow:0 2px 8px rgba(255,121,59,.3);
+}
+.btn-primary:hover{background:var(--orange-lt);box-shadow:0 3px 12px rgba(255,121,59,.45)}
+.btn-ghost{
+  background:transparent;color:var(--txt-muted);
+  border:1px solid var(--bd);
+}
+.btn-ghost:hover{background:var(--bg-raised);color:var(--txt);border-color:var(--txt-dim)}
+.btn-sm{padding:.25rem .65rem;font-size:.725rem}
+
+/* ── Nav Tabs ───────────────────────────────────────────────────────────────── */
+#nav-tabs{
+  background:var(--bg-card);border-bottom:1px solid var(--bd);
+  display:flex;padding:0 1.4rem;gap:.1rem;
+}
+.nav-tab{
+  padding:.55rem 1.15rem;font-size:.8rem;font-weight:700;
+  color:var(--txt-muted);cursor:pointer;
+  border-bottom:2px solid transparent;
+  transition:color .18s,border-color .18s;user-select:none;letter-spacing:.02em;
+}
+.nav-tab.active{color:var(--orange);border-bottom-color:var(--orange)}
+.nav-tab:hover:not(.active){color:var(--txt)}
+
+/* ── Parse Error Banner ─────────────────────────────────────────────────────── */
+#parse-banner{
+  background:var(--red-bg);border:1px solid rgba(248,113,113,.3);
+  border-radius:var(--radius-sm);padding:.5rem 1.4rem;
+  font-size:.775rem;color:var(--red);display:none;margin:.5rem 1.4rem;
+}
+
+/* ── Page Layout ────────────────────────────────────────────────────────────── */
+#pages{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.page{display:none;flex:1;overflow:hidden}
+.page.active{display:flex;flex-direction:column}
+#dashboard-page{flex-direction:row}
+#body-wrap{display:flex;flex:1;overflow:hidden}
+
+/* ── Sidebar ────────────────────────────────────────────────────────────────── */
+#sidebar{
+  width:252px;min-width:252px;
+  background:var(--bg-card);border-right:1px solid var(--bd);
+  overflow-y:auto;padding:.85rem .75rem;
+  display:flex;flex-direction:column;gap:.65rem;
+}
+.filter-section{
+  background:var(--bg-raised);border:1px solid var(--bd);
+  border-radius:var(--radius);padding:.75rem .8rem;
+}
+.filter-section h3{
+  font-size:.65rem;font-weight:800;text-transform:uppercase;
+  letter-spacing:.1em;color:var(--txt-dim);margin-bottom:.6rem;
+}
+.filter-group{display:flex;flex-direction:column;gap:.3rem;margin-bottom:.45rem}
+.filter-group:last-child{margin-bottom:0}
+.filter-group label{font-size:.72rem;font-weight:600;color:var(--txt-muted)}
+.filter-group select,.filter-group input[type=date]{width:100%;font-size:.775rem}
+.filter-group select[multiple]{height:86px}
+.sidebar-hint{
+  font-size:.65rem;color:var(--txt-dim);padding:.15rem .2rem;
+  line-height:1.5;
+}
+
+/* ── Main Content ────────────────────────────────────────────────────────────── */
+#main{
+  flex:1;overflow-y:auto;padding:1.1rem 1.4rem;
+  display:flex;flex-direction:column;gap:1rem;
+}
+
+/* ── KPI Strip ───────────────────────────────────────────────────────────────── */
+.kpi-strip{display:grid;grid-template-columns:repeat(4,1fr);gap:.85rem}
+.kpi-card{
+  background:var(--bg-card);border:1px solid var(--bd);
+  border-radius:var(--radius);padding:1rem 1.1rem;
+  position:relative;overflow:hidden;
+  transition:border-color .2s,box-shadow .2s;
+}
+.kpi-card:hover{border-color:var(--bd-soft);box-shadow:var(--shadow-sm)}
+/* Accent stripe — left edge */
+.kpi-card::before{
+  content:'';position:absolute;left:0;top:0;bottom:0;width:3px;
+  background:linear-gradient(180deg,var(--orange),var(--orange-dk));
+  border-radius:3px 0 0 3px;
+}
+.kpi-card.alert-card::before{
+  background:linear-gradient(180deg,var(--amber),#c08010);
+}
+/* Faint glow top-right corner */
+.kpi-card::after{
+  content:'';position:absolute;right:-18px;top:-18px;
+  width:70px;height:70px;border-radius:50%;
+  background:radial-gradient(circle,rgba(255,121,59,.07) 0%,transparent 70%);
+  pointer-events:none;
+}
+.kpi-label{
+  font-size:.66rem;font-weight:800;text-transform:uppercase;
+  letter-spacing:.08em;color:var(--txt-muted);margin-bottom:.45rem;
+}
+.kpi-value{
+  font-size:1.5rem;font-weight:900;color:var(--txt);
+  line-height:1.05;letter-spacing:-.01em;
+}
+.kpi-sub{font-size:.67rem;color:var(--txt-muted);margin-top:.3rem;line-height:1.4}
+
+/* ── Charts Grid ─────────────────────────────────────────────────────────────── */
+.charts-grid{display:grid;grid-template-columns:1fr 1fr;gap:.85rem}
+.chart-card{
+  background:var(--bg-card);border:1px solid var(--bd);
+  border-radius:var(--radius);padding:.9rem 1rem;position:relative;
+}
+.chart-title{
+  font-size:.8rem;font-weight:800;color:var(--txt);
+  margin-bottom:.25rem;letter-spacing:.01em;
+}
+.chart-subtitle{
+  font-size:.67rem;color:var(--txt-muted);
+  margin-bottom:.5rem;line-height:1.4;
+}
+.chart-wrap{position:relative;width:100%;height:224px}
+.chart-wrap canvas{display:block}
+.chart-toggle{display:flex;gap:.3rem;margin-bottom:.5rem}
+.chart-toggle button{
+  font-size:.67rem;font-weight:700;padding:.2rem .55rem;
+  border-radius:var(--radius-sm);border:1px solid var(--bd);
+  background:transparent;color:var(--txt-muted);letter-spacing:.02em;
+  transition:all .18s;
+}
+.chart-toggle button:hover{border-color:var(--orange);color:var(--orange)}
+.chart-toggle button.active{
+  background:var(--orange);color:#fff;border-color:var(--orange);
+  box-shadow:0 1px 6px rgba(255,121,59,.3);
+}
+
+/* ── Tooltip ─────────────────────────────────────────────────────────────────── */
+.tooltip-overlay{
+  position:fixed;
+  background:var(--bg-card);
+  border:1px solid var(--bd);
+  border-radius:var(--radius-sm);
+  padding:.4rem .75rem;font-size:.72rem;color:var(--txt);
+  pointer-events:none;z-index:9999;white-space:nowrap;display:none;
+  box-shadow:var(--shadow-sm);
+  line-height:1.4;
+}
+
+/* ── Insights Panel ──────────────────────────────────────────────────────────── */
+.insights-panel{
+  background:var(--bg-card);border:1px solid var(--bd);
+  border-radius:var(--radius);padding:.9rem 1rem;
+}
+.insights-panel h2{
+  font-size:.8rem;font-weight:800;color:var(--txt);
+  margin-bottom:.2rem;letter-spacing:.01em;
+}
+.insights-disc{
+  font-size:.67rem;color:var(--txt-dim);margin-bottom:.7rem;
+  font-style:italic;line-height:1.5;
+}
+.insight-list{display:flex;flex-direction:column;gap:.4rem}
+.insight-item{
+  display:flex;align-items:flex-start;gap:.55rem;
+  padding:.45rem .65rem;border-radius:var(--radius-sm);
+  font-size:.775rem;line-height:1.5;
+}
+.insight-item.warn{
+  background:rgba(251,191,36,.07);
+  border:1px solid rgba(251,191,36,.22);color:#fcd84a;
+}
+.insight-item.info{
+  background:rgba(34,211,200,.07);
+  border:1px solid rgba(34,211,200,.22);color:var(--teal-lt);
+}
+.insight-item.ok{
+  background:rgba(52,211,153,.07);
+  border:1px solid rgba(52,211,153,.22);color:#6ee7b7;
+}
+.insight-icon{flex-shrink:0;font-size:.82rem;margin-top:.12rem}
+
+/* ── Table Section ───────────────────────────────────────────────────────────── */
+.table-section{
+  background:var(--bg-card);border:1px solid var(--bd);
+  border-radius:var(--radius);padding:.9rem 1rem;
+}
+.table-header{
+  display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:.65rem;gap:.5rem;flex-wrap:wrap;
+}
+.table-header h2{
+  font-size:.8rem;font-weight:800;color:var(--txt);letter-spacing:.01em;
+}
+.table-controls{display:flex;gap:.4rem;align-items:center}
+.search-wrap{position:relative}
+.search-wrap input{
+  padding:.32rem .65rem .32rem 1.85rem;
+  width:210px;font-size:.775rem;
+}
+.search-icon{
+  position:absolute;left:.55rem;top:50%;transform:translateY(-50%);
+  color:var(--txt-muted);font-size:.77rem;pointer-events:none;
+}
+
+/* Table */
+.tbl-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:.775rem}
+thead{position:sticky;top:0;z-index:10}
+thead th{
+  background:var(--bg-raised);
+  color:var(--txt-dim);font-size:.65rem;font-weight:800;
+  text-transform:uppercase;letter-spacing:.07em;
+  padding:.5rem .75rem;text-align:left;
+  border-bottom:1px solid var(--bd);
+  border-top:none;
+  cursor:pointer;user-select:none;white-space:nowrap;
+  transition:color .15s;
+}
+thead th:hover{color:var(--txt-muted)}
+thead th.sorted{color:var(--orange)}
+/* Zebra rows for scanability */
+tbody tr:nth-child(even){background:rgba(22,34,56,.45)}
+tbody tr{border-bottom:1px solid rgba(31,47,72,.7);transition:background .12s}
+tbody tr:hover{background:rgba(255,121,59,.05)!important}
+tbody td{
+  padding:.42rem .75rem;color:var(--txt);
+  vertical-align:middle;line-height:1.4;
+}
+/* N/A row: amber left accent */
+tbody tr.na-row{border-left:3px solid var(--amber)}
+tbody tr.na-row td:first-child{padding-left:.6rem}
+
+/* Badges */
+.badge{
+  display:inline-block;font-size:.63rem;font-weight:700;
+  padding:.12rem .4rem;border-radius:4px;white-space:nowrap;
+  letter-spacing:.02em;
+}
+.b-rusak         {background:rgba(248,113,113,.15);color:#fca5a5}
+.b-tidak-terjual {background:rgba(96,165,250,.15);color:#93c5fd}
+.b-kadaluarsa    {background:rgba(251,191,36,.15);color:#fcd34d}
+.b-kesalahan     {background:rgba(167,139,250,.15);color:#c4b5fd}
+.b-training      {background:rgba(52,211,153,.15);color:#6ee7b7}
+.b-rnd           {background:rgba(34,211,200,.15);color:var(--teal-lt)}
+.b-test          {background:rgba(55,75,100,.5);color:#94a3b8}
+.b-cancel        {background:rgba(248,113,113,.2);color:#fca5a5}
+.b-other         {background:rgba(31,47,72,.7);color:var(--txt-muted)}
+.b-selesai       {background:rgba(52,211,153,.13);color:#6ee7b7}
+.b-batal         {background:rgba(248,113,113,.13);color:#fca5a5}
+
+/* N/A cost cell */
+.na-cost{color:var(--amber);font-size:.7rem;font-style:italic;letter-spacing:.02em}
+
+/* ── Pagination ──────────────────────────────────────────────────────────────── */
+.pagination{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:.6rem 0 .1rem;font-size:.72rem;color:var(--txt-muted);
+}
+.pagination-controls{display:flex;gap:.3rem;align-items:center;flex-wrap:wrap}
+.page-btn{
+  padding:.22rem .55rem;border-radius:var(--radius-sm);
+  background:var(--bg-raised);color:var(--txt-muted);
+  border:1px solid var(--bd);font-size:.7rem;cursor:pointer;
+  transition:all .15s;
+}
+.page-btn:hover{background:var(--bg-hover);color:var(--txt);border-color:var(--txt-dim)}
+.page-btn.cur{
+  background:var(--orange);color:#fff;border-color:var(--orange);
+  font-weight:700;box-shadow:0 1px 6px rgba(255,121,59,.3);
+}
+
+/* ── Quality / Audit Page ────────────────────────────────────────────────────── */
+#quality-page{
+  flex:1;overflow-y:auto;padding:1.2rem 1.6rem;
+  display:flex;flex-direction:column;gap:1rem;
+}
+.quality-header{padding-bottom:.1rem}
+.quality-header h2{
+  font-size:1.1rem;font-weight:900;color:var(--txt);
+  margin-bottom:.25rem;letter-spacing:-.01em;
+}
+.quality-header p{font-size:.78rem;color:var(--txt-muted);line-height:1.5}
+.quality-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:.85rem}
+.quality-card{
+  background:var(--bg-card);border:1px solid var(--bd);
+  border-radius:var(--radius);padding:.9rem 1.1rem;
+}
+.quality-card h3{
+  font-size:.65rem;font-weight:800;text-transform:uppercase;
+  letter-spacing:.08em;color:var(--txt-muted);margin-bottom:.5rem;
+}
+.quality-stat{
+  font-size:1.6rem;font-weight:900;color:var(--txt);
+  line-height:1;letter-spacing:-.01em;
+}
+.quality-stat-sub{font-size:.7rem;color:var(--txt-muted);margin-top:.25rem;line-height:1.4}
+.quality-section{
+  background:var(--bg-card);border:1px solid var(--bd);
+  border-radius:var(--radius);padding:.9rem 1.1rem;
+}
+.quality-section h3{
+  font-size:.8rem;font-weight:800;color:var(--txt);letter-spacing:.01em;
+  margin-bottom:.6rem;padding-bottom:.4rem;border-bottom:1px solid var(--bd);
+}
+.qrow{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:.3rem 0;border-bottom:1px solid rgba(31,47,72,.5);font-size:.775rem;
+}
+.qrow:last-child{border-bottom:none}
+.qrow .ql{color:var(--txt-muted)}
+.qrow .qr{color:var(--txt);font-weight:700}
+.qrow .qr.warn{color:var(--amber)}
+.quality-note{
+  font-size:.7rem;color:var(--txt-dim);font-style:italic;
+  margin-top:.6rem;padding:.45rem .7rem;
+  background:rgba(255,121,59,.05);border-radius:var(--radius-sm);
+  border-left:3px solid rgba(255,121,59,.35);line-height:1.6;
+}
+.dup-list{
+  margin-top:.45rem;display:flex;flex-direction:column;gap:.22rem;
+  max-height:170px;overflow-y:auto;
+}
+.dup-item{
+  display:flex;justify-content:space-between;
+  font-size:.72rem;padding:.22rem .45rem;
+  border-radius:var(--radius-sm);background:var(--bg-raised);
+}
+.dup-item .di-id{color:var(--txt-muted);font-family:monospace;font-size:.69rem}
+.dup-item .di-ct{color:var(--orange);font-weight:800}
+
+/* ── Donut Legend ────────────────────────────────────────────────────────────── */
+#donut-legend{
+  display:flex;flex-wrap:wrap;gap:.35rem .9rem;margin-top:.5rem;
+  padding-top:.5rem;border-top:1px solid var(--bd);
+}
+.legend-item{
+  display:flex;align-items:center;gap:.32rem;
+  font-size:.67rem;color:var(--txt-muted);
+}
+.legend-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+
+/* ── Responsive ──────────────────────────────────────────────────────────────── */
+@media(max-width:1280px){
+  .kpi-strip{grid-template-columns:repeat(2,1fr)}
+  .charts-grid{grid-template-columns:1fr}
+}
+@media(max-width:960px){
+  #sidebar{display:none}
+  #main{padding:.85rem 1rem}
+}
+@media(max-width:680px){
+  .kpi-strip{grid-template-columns:1fr}
+  .quality-grid{grid-template-columns:1fr}
+  #header{padding:.6rem 1rem}
+  #main{padding:.75rem .85rem}
+  .brand h1 span{display:none}
+}
+</style>
+</head>
+<body>
+<div id="app">
+  <header id="header">
+    <div class="brand">
+      <div class="brand-logo">C</div>
+      <h1>Crisbar <span>Waste Intelligence</span> Dashboard</h1>
+      <span class="period-badge">Maret 2026</span>
+      <span class="local-badge">&#x1F4C5; Offline Mode</span>
+    </div>
+    <div class="hdr-actions">
+      <label class="btn btn-ghost btn-sm" style="cursor:pointer">
+        &#x1F4C2; Muat CSV
+        <input type="file" id="csv-import" accept=".csv" style="display:none">
+      </label>
+      <button class="btn btn-ghost btn-sm" id="btn-export">&#x2193; Ekspor CSV</button>
+      <button class="btn btn-primary btn-sm" id="btn-reset">Reset Filter</button>
+    </div>
+  </header>
+  <nav id="nav-tabs">
+    <div class="nav-tab active" data-tab="dashboard">&#x1F4CA; Dashboard</div>
+    <div class="nav-tab" data-tab="quality">&#x1F50D; Kualitas Data</div>
+  </nav>
+  <div id="parse-banner"></div>
+  <div id="pages">
+    <div class="page active" id="dashboard-page">
+      <div id="body-wrap">
+        <aside id="sidebar">
+          <div class="filter-section">
+            <h3>Filter Kategori &amp; Status</h3>
+            <div class="filter-group">
+              <label>Kategori Produk</label>
+              <select id="f-kategori">
+                <option value="Bahan Baku">Bahan Baku</option>
+                <option value="">Semua Kategori</option>
+                <option value="Tidak Berkategori">Tidak Berkategori</option>
+              </select>
+            </div>
+            <div class="filter-group">
+              <label>Status</label>
+              <select id="f-status">
+                <option value="Selesai">Selesai</option>
+                <option value="">Semua Status</option>
+                <option value="Batal">Batal</option>
+              </select>
+            </div>
+          </div>
+          <div class="filter-section">
+            <h3>Filter Lokasi</h3>
+            <div class="filter-group">
+              <label>Tipe Lokasi</label>
+              <select id="f-group">
+                <option value="">Semua Tipe</option>
+                <option value="Outlet">Outlet</option>
+                <option value="CK">CK (Central Kitchen)</option>
+                <option value="DC">DC (Distribution Center)</option>
+                <option value="Kantor">Kantor</option>
+              </select>
+            </div>
+            <div class="filter-group">
+              <label>Lokasi (multi-pilih)</label>
+              <select id="f-lokasi" multiple></select>
+            </div>
+          </div>
+          <div class="filter-section">
+            <h3>Filter Alasan &amp; Produk</h3>
+            <div class="filter-group">
+              <label>Alasan</label>
+              <select id="f-alasan" multiple></select>
+            </div>
+            <div class="filter-group">
+              <label>Nama Produk</label>
+              <select id="f-produk" multiple></select>
+            </div>
+          </div>
+          <div class="filter-section">
+            <h3>Filter Tanggal</h3>
+            <div class="filter-group">
+              <label>Dari</label>
+              <input type="date" id="f-date-from">
+            </div>
+            <div class="filter-group">
+              <label>Sampai</label>
+              <input type="date" id="f-date-to">
+            </div>
+          </div>
+          <div style="font-size:.65rem;color:var(--txt-dim);padding:.2rem .3rem;line-height:1.5">
+            Tahan Ctrl/Cmd untuk multi-pilih. Kosong = semua.
+          </div>
+        </aside>
+        <main id="main">
+          <div class="kpi-strip" id="kpi-strip"></div>
+          <div class="charts-grid">
+            <div class="chart-card">
+              <div class="chart-title">Tren Harian Waste</div>
+              <div class="chart-toggle" id="c1-toggle">
+                <button class="active" data-m="cost">Estimasi Biaya</button>
+                <button data-m="rows">Jumlah Baris</button>
+              </div>
+              <div class="chart-wrap"><canvas id="c1"></canvas></div>
+            </div>
+            <div class="chart-card">
+              <div class="chart-title">Top Lokasi &mdash; Estimasi Biaya</div>
+              <div class="chart-subtitle">Klik bar untuk filter lokasi</div>
+              <div class="chart-wrap"><canvas id="c2"></canvas></div>
+            </div>
+            <div class="chart-card">
+              <div class="chart-title">Distribusi Alasan Waste</div>
+              <div class="chart-subtitle">% dari total biaya terestimasi. Klik segmen untuk filter.</div>
+              <div class="chart-wrap" style="height:195px"><canvas id="c3"></canvas></div>
+              <div id="donut-legend"></div>
+            </div>
+            <div class="chart-card">
+              <div class="chart-title">Top 10 Produk</div>
+              <div class="chart-toggle" id="c4-toggle">
+                <button class="active" data-m="cost">Estimasi Biaya</button>
+                <button data-m="rows">Jumlah Baris</button>
+              </div>
+              <div class="chart-wrap"><canvas id="c4"></canvas></div>
+            </div>
+          </div>
+          <div class="insights-panel" id="insights-panel">
+            <h2>&#x1F4A1; Insight Otomatis Berbasis Aturan</h2>
+            <div class="insights-disc">Insight dihitung otomatis dari data; bukan analisis AI generatif.</div>
+            <div class="insight-list" id="insight-list"></div>
+          </div>
+          <div class="table-section">
+            <div class="table-header">
+              <h2 id="tbl-title">Detail Waste</h2>
+              <div class="table-controls">
+                <div class="search-wrap">
+                  <span class="search-icon">&#x1F50D;</span>
+                  <input type="text" id="tbl-search" placeholder="Cari produk / No.Waste / PIC...">
+                </div>
+              </div>
+            </div>
+            <div class="tbl-wrap">
+              <table>
+                <thead id="tbl-head"></thead>
+                <tbody id="tbl-body"></tbody>
+              </table>
+            </div>
+            <div class="pagination" id="pagination"></div>
+          </div>
+        </main>
+      </div>
+    </div>
+    <div class="page" id="quality-page">
+      <div class="quality-header">
+        <h2>Audit Kualitas Data</h2>
+        <p>Transparansi sumber data untuk tim Finance &amp; QA &mdash; Periode Maret 2026</p>
+      </div>
+      <div class="quality-grid" id="quality-grid"></div>
+      <div class="quality-section" id="quality-breakdown"></div>
+      <div class="quality-section" id="quality-dups"></div>
+      <div class="quality-section" id="quality-malformed"></div>
+    </div>
+  </div>
+</div>
+<div class="tooltip-overlay" id="tooltip"></div>
+<script>// === SECTION 1: EMBEDDED CSV DATA ===
+const RAW_CSV = `Stok Waste_RCS
+Periode,2026-03-01 - 2026-03-31
+Lokasi,Semua Lokasi
+Kategori,Bahan Baku
+Alasan,"Rusak, Penelitian & Pengembangan, Test Food / RM, Kadaluarsa, Tidak terjual, Training Trainer, Kesalahan, Cancel Merchant, Penyimpanan Produk Pertinggal (By QA/QC), Investigasi / Verifikasi Produk (By QA/QC)"
+Kategori Produk,Nama Produk,Kode Produk,Lokasi,Tanggal Tercatat,No. Waste,Alasan,PIC,Qty Waste,Unit,Perkiraan Biaya,Dibuat Oleh,Catatan,Status
+Bahan Baku,(r) air mineral 600ml,GN-RM-BEV-001,Jatinangor,10/03/2026,Jatinangor-00478,Tidak terjual,435 KHOERUL HAMID,1,pcs,0,435 KHOERUL HAMID,-,Selesai
+Bahan Baku,(r) air mineral 600ml,GN-RM-BEV-001,Trisakti,18/03/2026,Trisakti-01149,Tidak terjual,877 RAFFIADATUL KEMAL AT-THAARIQ,1,pcs,1375,877 RAFFIADATUL KEMAL AT-THAARIQ,waste cancel shoope food,Selesai
+Bahan Baku,(r) ayam dada paha atas,GN-RM-PRO-001,Antapani,01/03/2026,Antap-01032,Tidak terjual,1456 MOCHAMAD INDRA MAULANA,3,pcs,13851,1456 MOCHAMAD INDRA MAULANA,ayam kecil ,Selesai
+Bahan Baku,(r) ayam dada paha atas,GN-RM-PRO-001,Jatinangor,01/03/2026,Jatinangor-00421,Kadaluarsa,1454 SAHRUL MAULANA,10,pcs,46170,62 ROHIMAN,holding time ,Selesai
+Bahan Baku,(r) ayam dada paha atas,GN-RM-PRO-001,Jatinangor,01/03/2026,Jatinangor-00423,Kesalahan,1801 RENI MARIAM,5,pcs,23085,REGGY 1058,-,Selesai
+Bahan Baku,(r) ayam dada paha atas,GN-RM-PRO-001,Maranatha,02/03/2026,Marnath-00565,Tidak terjual,1509 SEPTIA DWI ERLANGGA,2,pcs,9234,1509 SEPTIA DWI ERLANGGA,tidak terjual,Selesai
+Bahan Baku,(r) ayam dada paha atas,GN-RM-PRO-001,Jatinangor,02/03/2026,Jatinangor-00425,Kadaluarsa,1454 SAHRUL MAULANA,6,pcs,27702,62 ROHIMAN,holding time ,Selesai
+Bahan Baku,(r) ayam dada paha atas,GN-RM-PRO-001,Uhamka,02/03/2026,UHAMKA-00234,Rusak,1615 MILDA SITI NURAENI,9,pcs,41553,1615 MILDA SITI NURAENI,Waste ayam potong 9 pcs,Selesai
+Bahan Baku,(r) ayam dada paha atas,GN-RM-PRO-001,Jatinangor,02/03/2026,Jatinangor-00430,Kesalahan,1418 AKMAL BAEHAQI,3,pcs,13851,1901 RAFI NURFAIZ,Orderan tidak di ambil oleh customer ,Selesai
+Bahan Baku,(r) ayam dada paha atas,GN-RM-PRO-001,Jatinangor,02/03/2026,Jatinangor-00431,Rusak,1418 AKMAL BAEHAQI,2,pcs,9234,1901 RAFI NURFAIZ,Ayam terjatuh kelantai,Selesai
+Bahan Baku,(r) ayam dada paha atas,GN-RM-PRO-001,Sekeloa,02/03/2026,Sekeloa-02051,Tidak terjual,1843 MUHAMMAD ALFAHRUL JANUAR RIZKI,2,pcs,9234,1843 MUHAMMAD ALFAHRUL JANUAR RIZKI,lewat holding time dan tidak terjual ,Selesai
+Bahan Baku,(r) ayam dada paha atas,GN-RM-PRO-001,Sekeloa,02/03/2026,Sekeloa-02052,Tidak terjual,1843 MUHAMMAD ALFAHRUL JANUAR RIZKI,1,pcs,4617,1843 MUHAMMAD ALFAHRUL JANUAR RIZKI,salah potongan,Selesai
+Bahan Baku,(r) ayam dada paha atas,GN-RM-PRO-001,Uhamka,03/03/2026,UHAMKA-00237,Tidak terjual,1615 MILDA SITI NURAENI,2,pcs,9234,1615 MILDA SITI NURAENI,Waste ayam potong 2pcs,Selesai
+Bahan Baku,(r) ayam dada paha atas,GN-RM-PRO-001,Maranatha,04/03/2026,Marnath-00568,Tidak terjual,416 INDRA MAULANA,8,pcs,36936,416 INDRA MAULANA,-,Selesai
+Bahan Baku,(r) ayam dada paha atas,GN-RM-PRO-001,Unla,04/03/2026,unl-00008,Training Trainer,963 REFI AULIA DEFIANA,4,pcs,18468,963 REFI AULIA DEFIANA,Training produk kids meal,Selesai
+Bahan Baku,(r) ayam dada paha atas,GN-RM-PRO-001,Uhamka,04/03/2026,UHAMKA-00239,Tidak terjual,1615 MILDA SITI NURAENI,4,pcs,18468,1615 MILDA SITI NURAENI,Waste ayam potong dan nasi,Selesai
+Bahan Baku,(r) ayam dada paha atas,GN-RM-PRO-001,Jatinangor,05/03/2026,Jatinangor-00445,Rusak,1418 AKMAL BAEHAQI,8,pcs,36936,110 HERI KURNIAWAN,Holdingtime,Selesai
+Bahan Baku,(r) ayam dada paha atas,GN-RM-PRO-001,Maranatha,05/03/2026,Marnath-00569,Tidak terjual,1298 YOGA RAMDHAN EFENDI,8,pcs,36936,416 INDRA MAULANA,sisa ,Selesai
+Bahan Baku,(r) ayam dada paha atas,GN-RM-PRO-001,Jatinangor,05/03/2026,Jatinangor-00448,Rusak,1454 SAHRUL MAULANA,10,pcs,46170,REGGY 1058,time holding,Selesai
+Bahan Baku,(r) ayam dada paha atas,GN-RM-PRO-001,Unla,05/03/2026,Unla-00021,Training Trainer,963 REFI AULIA DEFIANA,2,pcs,9234,963 REFI AULIA DEFIANA,TRAINING UNLA KIDS MEAL,Selesai
+Bahan Baku,(r) ayam dada paha atas,GN-RM-PRO-001,Uhamka,05/03/2026,UHAMKA-00242,Rusak,1615 MILDA SITI NURAENI,1,pcs,4617,1615 MILDA SITI NURAENI,Waste ayam potong 1 pcs,Selesai
+Bahan Baku,(r) ayam dada paha atas,GN-RM-PRO-001,Maranatha,06/03/2026,Marnath-00572,Kadaluarsa,416 INDRA MAULANA,5,pcs,23085,416 INDRA MAULANA,habis holding time,Selesai
+Bahan Baku,(r) ayam dada paha atas,GN-RM-PRO-001,Maranatha,07/03/2026,Marnath-00574,Tidak terjual,1509 SEPTIA DWI ERLANGGA,5,pcs,23085,416 INDRA MAULANA,tidak terjual ,Selesai
+Bahan Baku,(r) ayam dada paha atas,GN-RM-PRO-001,Jatinangor,07/03/2026,Jatinangor-00462,Kadaluarsa,1975 AZZAHRA RAIHANAH,10,pcs,46170,REGGY 1058,time holding ,Selesai
+Bahan Baku,(r) ayam dada paha atas,GN-RM-PRO-001,Maranatha,08/03/2026,Marnath-00575,Tidak terjual,1509 SEPTIA DWI ERLANGGA,10,pcs,46170,416 INDRA MAULANA,tidak terjual,Selesai
+Bahan Baku,(r) ayam dada paha atas,GN-RM-PRO-001,Cihanjuang,08/03/2026,Cihanjuang-01287,Kesalahan,1579 MOHAMAD RIFKY RAMDHANI,1,pcs,4617,1579 MOHAMAD RIFKY RAMDHANI,waste pembuatan ayam geprek lebih,Selesai
+Bahan Baku,(r) ayam dada paha atas,GN-RM-PRO-001,UIN Bandung,08/03/2026,UINBDG-00585,Rusak,1525 SRI HAPPY DESTRIANA JELLAN,10,pcs,46170,1525 SRI HAPPY DESTRIANA JELLAN,Berbau dan hijau ,Selesai
+Bahan Baku,(r) ayam dada paha atas,GN-RM-PRO-001,Maranatha,10/03/2026,Marnath-00577,Tidak terjual,1509 SEPTIA DWI ERLANGGA,7,pcs,32319,416 INDRA MAULANA,tidak terjual,Selesai
+Bahan Baku,(r) ayam dada paha atas,GN-RM-PRO-001,Sekeloa,10/03/2026,Sekeloa-02077,Tidak terjual,Lauhil99,31,pcs,143127,1843 MUHAMMAD ALFAHRUL JANUAR RIZKI,ayam kecil return tidak di proses,Selesai
+Bahan Baku,(r) ayam dada paha atas,GN-RM-PRO-001,Gerlong,10/03/2026,Gerlong-01108,Rusak,2002 CANDA AGUSTIANA,6,pcs,27702,2002 CANDA AGUSTIANA,ayam jatuh,Selesai
+Bahan Baku,(r) ayam dada paha atas,GN-RM-PRO-001,Taman Kopo Indah,11/03/2026,Kopo-01489,Training Trainer,1437 ISMA NENENG NURLIAN,3,pcs,13851,1437 ISMA NENENG NURLIAN,3 pcs (training lto bersama crew),Selesai
+Bahan Baku,(r) ayam dada paha atas,GN-RM-PRO-001,Cihanjuang,11/03/2026,Cihanjuang-01296,Test Food / RM,1701 NISA NURUL IKHFA,1,pcs,4617,1579 MOHAMAD RIFKY RAMDHANI,tes food ,Selesai
+Bahan Baku,(r) ayam dada paha atas,GN-RM-PRO-001,Taman Kopo Indah,11/03/2026,Kopo-01492,Training Trainer,2004 ZAKIAH DANIELAH,4,pcs,18468,2004 ZAKIAH DANIELAH,training kid meal. belum ada pilihan foundue kid meal,Selesai
+Bahan Baku,(r) ayam dada paha atas,GN-RM-PRO-001,Jatinangor,12/03/2026,Jatinangor-00483,Kadaluarsa,110 HERI KURNIAWAN,8,pcs,36936,110 HERI KURNIAWAN,holding time produksi malam,Selesai
+Bahan Baku,(r) ayam dada paha atas,GN-RM-PRO-001,Sukapura,12/03/2026,Sukapura-02460,Training Trainer,1774 MUHAMAD RIZALDI SULAEMAN,1,pcs,4617,1774 MUHAMAD RIZALDI SULAEMAN,Kebutuhan training,Selesai
+Bahan Baku,(r) ayam dada paha atas,GN-RM-PRO-001,Sukapura,12/03/2026,Sukapura-02466,Tidak terjual,1679 MUHAMAD HANAFI,2,pcs,9234,1679 MUHAMAD HANAFI,tidak terjual,Selesai
+Bahan Baku,(r) ayam dada paha atas,GN-RM-PRO-001,Maranatha,13/03/2026,Marnath-00585,Tidak terjual,1299 THEO BINTANG SYAHRIEL,7,pcs,32319,416 INDRA MAULANA,-,Selesai
+Bahan Baku,(r) ayam dada paha atas,GN-RM-PRO-001,Ujung Berung,14/03/2026,UBER-01198,Training Trainer,432 INDAH SARI PRATIWI,3,pcs,15900,432 INDAH SARI PRATIWI,training,Selesai
+Bahan Baku,(r) ayam dada paha atas,GN-RM-PRO-001,Maranatha,15/03/2026,Marnath-00589,Tidak terjual,1509 SEPTIA DWI ERLANGGA,3,pcs,13851,416 INDRA MAULANA,tidak terjual (ukuran kecil),Selesai
+Bahan Baku,(r) ayam dada paha atas,GN-RM-PRO-001,Metro Margahayu,16/03/2026,Metro-01552,Penelitian & Pengembangan,1978 SYIFA MAHFUBA,2,pcs,9234,346 DEDI ROHIMAT,training lto,Selesai
+Bahan Baku,(r) ayam dada paha atas,GN-RM-PRO-001,Unpam,16/03/2026,UNPAM-00777,Tidak terjual,1756 DITA DWI ASTUTI,1,pcs,5370,1756 DITA DWI ASTUTI, ayam kecil,Selesai
+Bahan Baku,(r) ayam dada paha atas,GN-RM-PRO-001,Maranatha,17/03/2026,Marnath-00596,Training Trainer,416 INDRA MAULANA,2,pcs,9234,416 INDRA MAULANA,training kids meal,Selesai
+Bahan Baku,(r) ayam dada paha atas,GN-RM-PRO-001,Binus,17/03/2026,Binus-00573,Rusak,1234 GRIDWI RAPININGSIH,10,pcs,46170,1234 GRIDWI RAPININGSIH,bau dan kelamaan thwoing chiller,Selesai
+Bahan Baku,(r) ayam dada paha atas,GN-RM-PRO-001,Unisba,17/03/2026,Unisba-01191,Tidak terjual,RM TAUFIK ARIFIN,12,pcs,55404,RM TAUFIK ARIFIN,"tidak terjual ,sudah melebihi holding time ",Selesai
+Bahan Baku,(r) ayam dada paha atas,GN-RM-PRO-001,Jatinangor,18/03/2026,Jatinangor-00508,Kadaluarsa,1454 SAHRUL MAULANA,12,pcs,55404,110 HERI KURNIAWAN,holding time,Selesai
+Bahan Baku,(r) ayam dada paha atas,GN-RM-PRO-001,Jatinangor,18/03/2026,Jatinangor-00514,Kadaluarsa,Dian Heryani,3,pcs,13851,110 HERI KURNIAWAN,suwir ayam yg udah holding time 12 jam,Selesai
+Bahan Baku,(r) ayam dada paha atas,GN-RM-PRO-001,Unisba,18/03/2026,Unisba-01196,Tidak terjual,RM TAUFIK ARIFIN,11,pcs,50787,RM TAUFIK ARIFIN,ayam paket tidak terjual dikarenakan void dan itu terjadi di jam rush 18.00-19.20,Selesai
+Bahan Baku,(r) ayam dada paha atas,GN-RM-PRO-001,Unisba,19/03/2026,Unisba-01197,Kesalahan,RM TAUFIK ARIFIN,2,pcs,9234,RM TAUFIK ARIFIN,ayam crispy 2pcs(telah dijadikan suwir nasi goreng) salah penyajian bumbu dan ayam dada mentok ke...,Selesai
+Bahan Baku,(r) ayam dada paha atas,GN-RM-PRO-001,Maranatha,19/03/2026,Marnath-00599,Tidak terjual,1509 SEPTIA DWI ERLANGGA,4,pcs,18468,1509 SEPTIA DWI ERLANGGA,tidak terjual,Selesai
+Bahan Baku,(r) ayam dada paha atas,GN-RM-PRO-001,Jatinangor,19/03/2026,Jatinangor-00521,Kadaluarsa,435 KHOERUL HAMID,10,pcs,46170,435 KHOERUL HAMID,sudah ijo,Selesai
+Bahan Baku,(r) ayam dada paha atas,GN-RM-PRO-001,Unisba,20/03/2026,Unisba-01199,Tidak terjual,RM TAUFIK ARIFIN,5,pcs,23085,RM TAUFIK ARIFIN,ayam 5 pcs total (3 paket) tidak terjual karna void,Selesai
+Bahan Baku,(r) ayam dada paha atas,GN-RM-PRO-001,Binus,20/03/2026,Binus-00574,Rusak,1234 GRIDWI RAPININGSIH,80,pcs,369360,1234 GRIDWI RAPININGSIH,ayam bau dikarenakan chiller rusakk,Selesai
+Bahan Baku,(r) ayam dada paha atas,GN-RM-PRO-001,Binus,20/03/2026,Binus-00576,Rusak,1234 GRIDWI RAPININGSIH,220,pcs,1015740,1234 GRIDWI RAPININGSIH,22 pack/220 pcs. ayam bau karena chiller rusak,Selesai
+Bahan Baku,(r) ayam dada paha atas,GN-RM-PRO-001,Gerlong,20/03/2026,Gerlong-01148,Rusak,1601 ASEP TRISNA,1,pcs,4617,1601 ASEP TRISNA,AYAM JATUH DAN OVER HOLDING TIME SAMBEL,Selesai
+Bahan Baku,(r) ayam dada paha atas,GN-RM-PRO-001,Binus,20/03/2026,Binus-00577,Rusak,1234 GRIDWI RAPININGSIH,160,pcs,738720,1234 GRIDWI RAPININGSIH,"ayam busuk biru, karena chiller rusak",Selesai
+Bahan Baku,(r) ayam dada paha atas,GN-RM-PRO-001,Kukusan UI,20/03/2026,Kukusan-01240,Tidak terjual,1142 HIMAWAN PRASETYO,3,pcs,13851,1167 SINTIA APRILIANI,ayam cancel,Selesai
+Bahan Baku,(r) ayam dada paha atas,GN-RM-PRO-001,Cihanjuang,21/03/2026,Cihanjuang-01323,Tidak terjual,1579 MOHAMAD RIFKY RAMDHANI,1,pcs,4617,1579 MOHAMAD RIFKY RAMDHANI,waste produk melebih batas holding time(tidak terjual),Selesai
+Bahan Baku,(r) ayam dada paha atas,GN-RM-PRO-001,Sekeloa,21/03/2026,Sekeloa-02102,Tidak terjual,Lauhil99,6,pcs,27702,Lauhil99,ayam sisa closing,Selesai
+Bahan Baku,(r) ayam dada paha atas,GN-RM-PRO-001,Unla,21/03/2026,Unla-00076,Kesalahan,1986 MUHAMMAD ARZUAN MOHRIM,1,pcs,4617,1986 MUHAMMAD ARZUAN MOHRIM,jatuh ke lantai (Edwin) ,Selesai
+Bahan Baku,(r) ayam dada paha atas,GN-RM-PRO-001,Melong,21/03/2026,Melong-00856,Rusak,Kania Firdanisa,57,pcs,263169,Kania Firdanisa,"tidak ada over handle shift malam ( ahmad ,fadli ,adit )",Selesai
+Bahan Baku,(r) ayam dada paha atas,GN-RM-PRO-001,Gerlong,21/03/2026,Gerlong-01156,Rusak,1601 ASEP TRISNA,110,pcs,507870,1601 ASEP TRISNA,AYAM BERBAU TIDAK SEDAP DAN BERWARNA HITAM,Selesai
+Bahan Baku,(r) ayam dada paha atas,GN-RM-PRO-001,Jatinangor,21/03/2026,Jatinangor-00525,Kadaluarsa,1418 AKMAL BAEHAQI,7,pcs,32319,REGGY 1058,time holding,Selesai
+Bahan Baku,(r) ayam dada paha atas,GN-RM-PRO-001,Gerlong,21/03/2026,Gerlong-01157,Rusak,1601 ASEP TRISNA,10,pcs,46170,1601 ASEP TRISNA,BERBAU TIDAK SEDAP DAN WARNA HITAM,Selesai
+Bahan Baku,(r) ayam dada paha atas,GN-RM-PRO-001,Gerlong,22/03/2026,Gerlong-01158,Rusak,1288 BAYU SUANDA,10,pcs,46170,1288 BAYU SUANDA,busuk karena chiller tidak dingin,Selesai
+Bahan Baku,(r) ayam dada paha atas,GN-RM-PRO-001,Unisba,22/03/2026,Unisba-01205,Tidak terjual,RM TAUFIK ARIFIN,2,pcs,9234,RM TAUFIK ARIFIN,pesanan gojek void tidak ada driver yang mengambil pesanan,Selesai
+Bahan Baku,(r) ayam dada paha atas,GN-RM-PRO-001,Unisba,22/03/2026,Unisba-01206,Kadaluarsa,RM TAUFIK ARIFIN,2,pcs,9234,RM TAUFIK ARIFIN,ayam spicy 1pcs sudah holding time dan ayam crispy 1pcs ukuran kecil tidak sesuai sop produk,Selesai
+Bahan Baku,(r) ayam dada paha atas,GN-RM-PRO-001,Uhamka,22/03/2026,UHAMKA-00268,Kadaluarsa,1615 MILDA SITI NURAENI,9,pcs,41553,1615 MILDA SITI NURAENI,-,Selesai
+Bahan Baku,(r) ayam dada paha atas,GN-RM-PRO-001,Melong,21/03/2026,Melong-00858,Test Food / RM,Kania Firdanisa,3,pcs,13851,Kania Firdanisa,-,Selesai
+Bahan Baku,(r) ayam dada paha atas,GN-RM-PRO-001,Unisba,23/03/2026,Unisba-01207,Tidak terjual,RM TAUFIK ARIFIN,7,pcs,32319,RM TAUFIK ARIFIN,cancel order costumer ,Selesai
+Bahan Baku,(r) ayam dada paha atas,GN-RM-PRO-001,Kukusan UI,23/03/2026,Kukusan-01251,Tidak terjual,1142 HIMAWAN PRASETYO,3,pcs,13851,1167 SINTIA APRILIANI,Cancel,Selesai
+Bahan Baku,(r) ayam dada paha atas,GN-RM-PRO-001,Gerlong,23/03/2026,Gerlong-01161,Kadaluarsa,335 GALIH SEPTENDI,1,pcs,4617,335 GALIH SEPTENDI,ayam bau,Selesai
+Bahan Baku,(r) ayam dada paha atas,GN-RM-PRO-001,Unisba,23/03/2026,Unisba-01208,Tidak terjual,RM TAUFIK ARIFIN,4,pcs,18468,RM TAUFIK ARIFIN,tidak terjual,Selesai
+Bahan Baku,(r) ayam dada paha atas,GN-RM-PRO-001,Unisba,24/03/2026,Unisba-01210,Tidak terjual,RM TAUFIK ARIFIN,1,pcs,4617,RM TAUFIK ARIFIN,void tidak diambil driver paket dari jeongbok,Selesai
+Bahan Baku,(r) ayam dada paha atas,GN-RM-PRO-001,Unisba,24/03/2026,Unisba-01211,Tidak terjual,RM TAUFIK ARIFIN,2,pcs,9234,RM TAUFIK ARIFIN,Paket ayam void tidak diambil oleh driver,Selesai
+Bahan Baku,(r) ayam dada paha atas,GN-RM-PRO-001,Antapani,24/03/2026,Antap-01143,Tidak terjual,1851 INTAN OKTAVIANI,17,pcs,78489,1851 INTAN OKTAVIANI,-,Selesai
+Bahan Baku,(r) ayam dada paha atas,GN-RM-PRO-001,Unisba,25/03/2026,Unisba-01214,Tidak terjual,RM TAUFIK ARIFIN,1,pcs,4617,RM TAUFIK ARIFIN,tidak terjual karna driver tidak mengambil pesanan,Selesai
+Bahan Baku,(r) ayam dada paha atas,GN-RM-PRO-001,Unisba,26/03/2026,Unisba-01218,Tidak terjual,RM TAUFIK ARIFIN,2,pcs,9234,RM TAUFIK ARIFIN,ayam crispy 2pcs berukuran kecil tidak sesuai sop,Selesai
+Bahan Baku,(r) ayam dada paha atas,GN-RM-PRO-001,Sukapura,26/03/2026,Sukapura-02533,Tidak terjual,1679 MUHAMAD HANAFI,5,pcs,23085,1679 MUHAMAD HANAFI,tidak terjual,Selesai
+Bahan Baku,(r) ayam dada paha atas,GN-RM-PRO-001,Melong,27/03/2026,Melong-00875,Tidak terjual,762 AHMAD FAUZAN,3,pcs,13851,762 AHMAD FAUZAN,tidak terjual,Selesai
+Bahan Baku,(r) ayam dada paha atas,GN-RM-PRO-001,Melong,27/03/2026,Melong-00877,Tidak terjual,762 AHMAD FAUZAN,14,pcs,64638,762 AHMAD FAUZAN,overheat,Selesai
+Bahan Baku,(r) ayam dada paha atas,GN-RM-PRO-001,IKPN Bintaro,28/03/2026,Bintaro-00424,Test Food / RM,1558 RIVALDI ROMANSYAH,1,pcs,4509,1558 RIVALDI ROMANSYAH,rst + training,Selesai
+Bahan Baku,(r) ayam dada paha atas,GN-RM-PRO-001,Melong,29/03/2026,Melong-00881,Tidak terjual,762 AHMAD FAUZAN,14,pcs,64638,762 AHMAD FAUZAN,df eror dan sisa closing ,Selesai
+Bahan Baku,(r) ayam dada paha atas,GN-RM-PRO-001,UIN Bandung,29/03/2026,UINBDG-00606,Test Food / RM,Zenal,2,pcs,9234,Zenal,-,Selesai
+Bahan Baku,(r) ayam dada paha atas,GN-RM-PRO-001,Antapani,30/03/2026,Antap-01164,Penelitian & Pengembangan,Rina,1,pcs,4617,Rina,- untuk coba sampel tepung regular dan bandingkan dengan existing serta untuk bandingkan sampel saus,Selesai
+Bahan Baku,(r) ayam dada paha atas,GN-RM-PRO-001,Gerlong,30/03/2026,Gerlong-01194,Rusak,1288 BAYU SUANDA,10,pcs,46170,1288 BAYU SUANDA,bau,Selesai
+Bahan Baku,(r) ayam dada paha atas,GN-RM-PRO-001,Cihanjuang,31/03/2026,Cihanjuang-01352,Tidak terjual,1579 MOHAMAD RIFKY RAMDHANI,12,pcs,55404,1579 MOHAMAD RIFKY RAMDHANI,waste ayam kecill,Selesai
+Bahan Baku,(r) ayam dada paha atas,GN-RM-PRO-001,Uhamka,31/03/2026,UHAMKA-00289,Tidak terjual,1615 MILDA SITI NURAENI,5,pcs,23085,1615 MILDA SITI NURAENI,-,Selesai
+Bahan Baku,(r) ayam utuh,GN-RM-PRO-004,Mercubuana,08/03/2026,Mercu-01116,Rusak,2023 MAESHELLA KRISTIAWAN,2,ekor,56780,2023 MAESHELLA KRISTIAWAN,marinasi terlalu banyak ,Selesai
+Bahan Baku,(r) ayam utuh,GN-RM-PRO-004,UIN Bandung,09/03/2026,UINBDG-00586,Rusak,1525 SRI HAPPY DESTRIANA JELLAN,1,ekor,29070,1525 SRI HAPPY DESTRIANA JELLAN,bau dan berubah warna,Selesai
+Bahan Baku,(r) ayam utuh,GN-RM-PRO-004,UIN Bandung,10/03/2026,UINBDG-00588,Rusak,MUHAMMAD RAFI ROZAAN,3,ekor,87210,MUHAMMAD RAFI ROZAAN,ayam berbau menyengat,Selesai
+Bahan Baku,(r) ayam utuh,GN-RM-PRO-004,Unpar,13/03/2026,Unpar-01312,Kadaluarsa,1648 MIRZA YANUAR ARIFIN,1,ekor,27500,1661 INDAH MAWARNI,"lewat masa thawing,ayam bau",Selesai
+Bahan Baku,(r) ayam utuh,GN-RM-PRO-004,Antapani,15/03/2026,Antap-01097,Tidak terjual,1851 INTAN OKTAVIANI,1,ekor,29070,1851 INTAN OKTAVIANI,-,Selesai
+Bahan Baku,(r) ayam utuh,GN-RM-PRO-004,Melong,21/03/2026,Melong-00856,Rusak,Kania Firdanisa,1,ekor,29070,Kania Firdanisa,"tidak ada over handle shift malam ( ahmad ,fadli ,adit )",Selesai
+Bahan Baku,(r) ayam utuh,GN-RM-PRO-004,Melong,26/03/2026,Melong-00873,Rusak,1842 AFFIFAH,2,ekor,58140,1842 AFFIFAH,rusak,Selesai
+Bahan Baku,(r) ayam utuh,GN-RM-PRO-004,Melong,29/03/2026,Melong-00882,Tidak terjual,762 AHMAD FAUZAN,2,ekor,58140,762 AHMAD FAUZAN,df eror,Selesai
+Bahan Baku,(r) ayam utuh,GN-RM-PRO-004,Widyatama,29/03/2026,Widyatama-01366,Kadaluarsa,2003 VICKY CAHYA MAHENDRA,1,ekor,33500,2003 VICKY CAHYA MAHENDRA,sudah lewat holding time tidak terjual dan bau. ,Selesai
+Bahan Baku,(r) ayam utuh,GN-RM-PRO-004,Unjani,31/03/2026,Unjani-01892,Kadaluarsa,1094 MUHAMMAD ABDUL HAKIM RIDHO,1,ekor,29070,1094 MUHAMMAD ABDUL HAKIM RIDHO,tidak sesuai ctd,Selesai
+Bahan Baku,(r) balado swicy fries,CB-RM-CON-001,Uhamka,06/03/2026,UHAMKA-00247,Tidak terjual,1615 MILDA SITI NURAENI,1,g,64,1615 MILDA SITI NURAENI,voit,Selesai
+Bahan Baku,(r) balado swicy fries,CB-RM-CON-001,Mercubuana,08/03/2026,Mercu-01130,Rusak,2023 MAESHELLA KRISTIAWAN,409,g,26176,2023 MAESHELLA KRISTIAWAN,menggumpal ,Selesai
+Bahan Baku,(r) balado swicy fries,CB-RM-CON-001,Uhamka,12/03/2026,UHAMKA-00257,Tidak terjual,1615 MILDA SITI NURAENI,1,g,64,1615 MILDA SITI NURAENI,void oleh customer ,Selesai
+Bahan Baku,(r) balado swicy fries,CB-RM-CON-001,Trisakti,12/03/2026,Trisakti-01107,Training Trainer,877 RAFFIADATUL KEMAL AT-THAARIQ,5,g,320,877 RAFFIADATUL KEMAL AT-THAARIQ,training trainer ,Selesai
+Bahan Baku,(r) balado swicy fries,CB-RM-CON-001,Ujung Berung,14/03/2026,UBER-01198,Training Trainer,432 INDAH SARI PRATIWI,15,g,960,432 INDAH SARI PRATIWI,training,Selesai
+Bahan Baku,(r) balado swicy fries,CB-RM-CON-001,Ujung Berung,18/03/2026,UBER-01237,Kesalahan,1813 EGIANSYAH,170,g,10880,1813 EGIANSYAH,kentang lembek ,Selesai
+Bahan Baku,(r) bburinkle cheese,GN-RM-DRY-001,DC Crisbar Bandung,02/03/2026,dcC-00221,Penelitian & Pengembangan,Dian,2000,g,293040,Dian,buat di teliti request pak Irfan untuk dikirim ke binus,Selesai
+Bahan Baku,(r) bburinkle cheese,GN-RM-DRY-001,Unla,05/03/2026,Unla-00021,Training Trainer,963 REFI AULIA DEFIANA,15,g,2197.8,963 REFI AULIA DEFIANA,TRAINING UNLA KIDS MEAL,Selesai
+Bahan Baku,(r) bburinkle cheese,GN-RM-DRY-001,Trisakti,12/03/2026,Trisakti-01107,Training Trainer,877 RAFFIADATUL KEMAL AT-THAARIQ,15,g,2197.8,877 RAFFIADATUL KEMAL AT-THAARIQ,training trainer ,Selesai
+Bahan Baku,(r) bburinkle cheese,GN-RM-DRY-001,Ujung Berung,14/03/2026,UBER-01198,Training Trainer,432 INDAH SARI PRATIWI,30,g,4395.6,432 INDAH SARI PRATIWI,training,Selesai
+Bahan Baku,(r) bburinkle cheese,GN-RM-DRY-001,Widyatama,15/03/2026,Widyatama-01340,Penelitian & Pengembangan,1207 RIZKA AMELIA SUYONO,9,g,1318.68,1207 RIZKA AMELIA SUYONO,Training Kids Meal Widyatama ,Selesai
+Bahan Baku,(r) beras,GN-RM-DRY-002,Kelapa Dua,03/03/2026,KLP2-00546,Kesalahan,1242 DWINA RATU JOVITA,2000,g,31000,1242 DWINA RATU JOVITA,waste human error a.n irfan ,Selesai
+Bahan Baku,(r) beras,GN-RM-DRY-002,Gerlong,09/03/2026,Gerlong-01103,Rusak,2002 CANDA AGUSTIANA,2700,g,43200,2002 CANDA AGUSTIANA,jatuh,Selesai
+Bahan Baku,(r) beras,GN-RM-DRY-002,Taman Kopo Indah,12/03/2026,Kopo-01493,Rusak,2004 ZAKIAH DANIELAH,4950,g,79200,2004 ZAKIAH DANIELAH,terbakar,Selesai
+Bahan Baku,(r) beras,GN-RM-DRY-002,Sekeloa,13/03/2026,Sekeloa-02087,Kesalahan,Mochamad Gilang,3777,g,58543.5,1843 MUHAMMAD ALFAHRUL JANUAR RIZKI,beras tumpah ke lantai,Selesai
+Bahan Baku,(r) beras,GN-RM-DRY-002,Melong,13/03/2026,Melong-00835,Rusak,762 AHMAD FAUZAN,11700,g,187200,762 AHMAD FAUZAN,rice cooker eror,Selesai
+Bahan Baku,(r) beras,GN-RM-DRY-002,Melong,16/03/2026,Melong-00843,Rusak,762 AHMAD FAUZAN,11720,g,187520,762 AHMAD FAUZAN,nasi gosong rice cooker eror,Selesai
+Bahan Baku,(r) beras,GN-RM-DRY-002,UIN Jakarta,17/03/2026,UINJKT-00845,Rusak,1780 ADITYA PRATAMA,1905,g,29527.5,1780 ADITYA PRATAMA,beras berjemur ,Selesai
+Bahan Baku,(r) beras,GN-RM-DRY-002,UIN Bandung,19/03/2026,UINBDG-00600,Rusak,MUHAMMAD RAFI ROZAAN,6950,g,107725,MUHAMMAD RAFI ROZAAN,"beras pemasakan gigih, karna habis gas pada saat pemasakan nasi berlangsung",Selesai
+Bahan Baku,(r) beras,GN-RM-DRY-002,Sekeloa,20/03/2026,Sekeloa-02100,Kesalahan,Mochamad Gilang,3956,g,61318,1843 MUHAMMAD ALFAHRUL JANUAR RIZKI,nasi gigih karena kehabisan gas,Selesai
+Bahan Baku,(r) beras,GN-RM-DRY-002,Unisba,26/03/2026,Unisba-01217,Rusak,RM TAUFIK ARIFIN,5000,g,77500,RM TAUFIK ARIFIN,kesalahan pembuatan beras sehingga nasi menjadi gigih dan perihal gas tiba-tiba mati di pertengah...,Selesai
+Bahan Baku,(r) beras,GN-RM-DRY-002,Cisitu,31/03/2026,Cisitu-01113,Rusak,1532 SETYAWATI HELVINA,4950,g,76725,1532 SETYAWATI HELVINA,gosong rice cooker eror,Selesai
+Bahan Baku,(r) box ala carte crisbar,CB-PK-BAG-001,Unpam,01/03/2026,UNPAM-00714,Kadaluarsa,1807 RIZKY ALPIANSYAH RAMADHAN,1,pcs,590,1807 RIZKY ALPIANSYAH RAMADHAN,cancel gojek,Selesai
+Bahan Baku,(r) box ala carte crisbar,CB-PK-BAG-001,Unpam,01/03/2026,UNPAM-00715,Tidak terjual,1807 RIZKY ALPIANSYAH RAMADHAN,1,pcs,590,1807 RIZKY ALPIANSYAH RAMADHAN,cancel gojek,Selesai
+Bahan Baku,(r) box ala carte crisbar,CB-PK-BAG-001,UIN Jakarta,02/03/2026,UINJKT-00783,Tidak terjual,1780 ADITYA PRATAMA,1,pcs,590,1780 ADITYA PRATAMA,Cancel Gojek Alya tidak dapat driver,Selesai
+Bahan Baku,(r) box ala carte crisbar,CB-PK-BAG-001,UIN Jakarta,02/03/2026,UINJKT-00784,Tidak terjual,1780 ADITYA PRATAMA,1,pcs,590,1780 ADITYA PRATAMA,cancel shopee sf-973t,Selesai
+Bahan Baku,(r) box ala carte crisbar,CB-PK-BAG-001,Uhamka,05/03/2026,UHAMKA-00244,Rusak,1615 MILDA SITI NURAENI,15,pcs,8850,1615 MILDA SITI NURAENI,kotor terkena bumbu crisbar ,Selesai
+Bahan Baku,(r) box ala carte crisbar,CB-PK-BAG-001,Taman Kopo Indah,05/03/2026,Kopo-01466,Tidak terjual,1437 ISMA NENENG NURLIAN,1,pcs,590,1437 ISMA NENENG NURLIAN,cansellan Shopee food,Selesai
+Bahan Baku,(r) box ala carte crisbar,CB-PK-BAG-001,Kukusan UI,07/03/2026,Kukusan-01196,Tidak terjual,1167 SINTIA APRILIANI,1,pcs,590,1167 SINTIA APRILIANI,orderan di cancel,Selesai
+Bahan Baku,(r) box ala carte crisbar,CB-PK-BAG-001,Uhamka,07/03/2026,UHAMKA-00248,Tidak terjual,1615 MILDA SITI NURAENI,3,pcs,1770,1615 MILDA SITI NURAENI,void,Selesai
+Bahan Baku,(r) box ala carte crisbar,CB-PK-BAG-001,Sukapura,11/03/2026,Sukapura-02458,Penelitian & Pengembangan,Rina,1,pcs,590,Rina,untuk trial gramasi fries dan trial sampel kresek,Selesai
+Bahan Baku,(r) box ala carte crisbar,CB-PK-BAG-001,UIN Jakarta,14/03/2026,UINJKT-00835,Kadaluarsa,1780 ADITYA PRATAMA,3,pcs,1770,1780 ADITYA PRATAMA,cancel gojek ,Selesai
+Bahan Baku,(r) box ala carte crisbar,CB-PK-BAG-001,Kelapa Dua,17/03/2026,KLP2-00584,Rusak,1242 DWINA RATU JOVITA,1,pcs,590,1242 DWINA RATU JOVITA,waste packaging cancel an,Selesai
+Bahan Baku,(r) box ala carte crisbar,CB-PK-BAG-001,UIN Jakarta,25/03/2026,UINJKT-00866,Tidak terjual,1780 ADITYA PRATAMA,2,pcs,1180,1780 ADITYA PRATAMA,cancel shopee ,Selesai
+Bahan Baku,(r) box ala carte crisbar,CB-PK-BAG-001,UIN Jakarta,25/03/2026,UINJKT-00867,Tidak terjual,1780 ADITYA PRATAMA,1,pcs,590,1780 ADITYA PRATAMA,cancel gojek Aprilia,Selesai
+Bahan Baku,(r) box ala carte crisbar,CB-PK-BAG-001,UIN Jakarta,25/03/2026,UINJKT-00868,Tidak terjual,1780 ADITYA PRATAMA,1,pcs,590,1780 ADITYA PRATAMA,-,Selesai
+Bahan Baku,(r) box ala carte crisbar,CB-PK-BAG-001,UIN Jakarta,25/03/2026,UINJKT-00869,Tidak terjual,1780 ADITYA PRATAMA,2,pcs,1180,1780 ADITYA PRATAMA,cancel gojek l,Selesai
+Bahan Baku,(r) box ala carte crisbar,CB-PK-BAG-001,UIN Jakarta,27/03/2026,UINJKT-00877,Tidak terjual,1780 ADITYA PRATAMA,2,pcs,1180,1780 ADITYA PRATAMA,cancel sf-19 driver tidak menemukan outlet ,Selesai
+Bahan Baku,(r) box ala carte crisbar,CB-PK-BAG-001,Kelapa Dua,29/03/2026,KLP2-00617,Tidak terjual,1242 DWINA RATU JOVITA,1,pcs,590,1242 DWINA RATU JOVITA,waste cancel kelapa dua,Selesai
+Bahan Baku,(r) box ala carte crisbar,CB-PK-BAG-001,Kelapa Dua,29/03/2026,KLP2-00618,Tidak terjual,1242 DWINA RATU JOVITA,1,pcs,590,1242 DWINA RATU JOVITA,waste cancel kelapa dua,Selesai
+Bahan Baku,(r) box ala carte crisbar,CB-PK-BAG-001,Kelapa Dua,29/03/2026,KLP2-00619,Tidak terjual,1242 DWINA RATU JOVITA,3,pcs,1770,1242 DWINA RATU JOVITA,waste cancel kelapa dua gojek ,Selesai
+Bahan Baku,(r) box ala carte crisbar,CB-PK-BAG-001,Unpam,30/03/2026,UNPAM-00823,Kadaluarsa,1807 RIZKY ALPIANSYAH RAMADHAN,1,pcs,590,1807 RIZKY ALPIANSYAH RAMADHAN,"mengikuti ctd dan lewat holding time ,ayam crispy ,kentang medium, Scrambled ",Selesai
+Bahan Baku,(r) box ala carte crisbar,CB-PK-BAG-001,UIN Jakarta,30/03/2026,UINJKT-00887,Tidak terjual,1780 ADITYA PRATAMA,1,pcs,590,1780 ADITYA PRATAMA,cancel online/gojek,Selesai
+Bahan Baku,(r) box ala carte crisbar,CB-PK-BAG-001,Unjani,30/03/2026,Unjani-01891,Tidak terjual,1094 MUHAMMAD ABDUL HAKIM RIDHO,2,pcs,1180,1308 SERUNI JANNAH,cancel ,Selesai
+Bahan Baku,(r) box ala carte jbc,JB-PK-BAG-001,Ujung Berung,15/03/2026,UBER-01211,Rusak,1235 UJANG FIRMANSYAH,2,pcs,1700,1235 UJANG FIRMANSYAH,waste box pada nempel.rusak,Selesai
+Bahan Baku,(r) box ala carte jbc,JB-PK-BAG-001,Binus,28/03/2026,Binus-00583,Rusak,1234 GRIDWI RAPININGSIH,3,pcs,2550,1234 GRIDWI RAPININGSIH,-,Selesai
+Bahan Baku,(r) box ala carte jbc,JB-PK-BAG-001,Ujung Berung,31/03/2026,UBER-01307,Rusak,1235 UJANG FIRMANSYAH,1,pcs,850,1235 UJANG FIRMANSYAH,pada sobek dan basah,Selesai
+Bahan Baku,(r) box ayam utuh crisbar,CB-PK-BAG-002,Unpam,01/03/2026,UNPAM-00711,Tidak terjual,1807 RIZKY ALPIANSYAH RAMADHAN,1,pcs,2300,1807 RIZKY ALPIANSYAH RAMADHAN,cancel gojek ,Selesai
+Bahan Baku,(r) box ayam utuh crisbar,CB-PK-BAG-002,UIN Jakarta,06/03/2026,UINJKT-00802,Tidak terjual,1780 ADITYA PRATAMA,2,pcs,4600,1780 ADITYA PRATAMA,cancel gojek nabila,Selesai
+Bahan Baku,(r) box ayam utuh crisbar,CB-PK-BAG-002,Unpam,07/03/2026,UNPAM-00733,Tidak terjual,1807 RIZKY ALPIANSYAH RAMADHAN,1,pcs,2300,1807 RIZKY ALPIANSYAH RAMADHAN,cancel driver,Selesai
+Bahan Baku,(r) box ayam utuh crisbar,CB-PK-BAG-002,Unpam,08/03/2026,UNPAM-00746,Tidak terjual,1807 RIZKY ALPIANSYAH RAMADHAN,1,pcs,2300,1807 RIZKY ALPIANSYAH RAMADHAN,cancel gojek ,Selesai
+Bahan Baku,(r) box ayam utuh crisbar,CB-PK-BAG-002,Taman Kopo Indah,31/03/2026,Kopo-01572,Rusak,1410 FIQRI FAUZIA ARDIANSYAH,3,pcs,6900,1410 FIQRI FAUZIA ARDIANSYAH,rusak,Selesai
+Bahan Baku,(r) box ayam utuh jbc,JB-PK-BAG-002,Unpam,01/03/2026,UNPAM-00712,Tidak terjual,1807 RIZKY ALPIANSYAH RAMADHAN,1,pcs,1875,1807 RIZKY ALPIANSYAH RAMADHAN,cancel driver gojek,Selesai
+Bahan Baku,(r) box ayam utuh jbc,JB-PK-BAG-002,UIN Jakarta,07/03/2026,UINJKT-00807,Tidak terjual,1780 ADITYA PRATAMA,1,pcs,1875,1780 ADITYA PRATAMA,-,Selesai
+Bahan Baku,(r) box combo crisbar,CB-PK-BAG-003,Unpam,01/03/2026,UNPAM-00713,Tidak terjual,1807 RIZKY ALPIANSYAH RAMADHAN,3,pcs,1920,1807 RIZKY ALPIANSYAH RAMADHAN,cancel driver,Selesai
+Bahan Baku,(r) box combo crisbar,CB-PK-BAG-003,Unpam,01/03/2026,UNPAM-00714,Kadaluarsa,1807 RIZKY ALPIANSYAH RAMADHAN,1,pcs,640,1807 RIZKY ALPIANSYAH RAMADHAN,cancel gojek,Selesai
+Bahan Baku,(r) box combo crisbar,CB-PK-BAG-003,Unpam,01/03/2026,UNPAM-00715,Tidak terjual,1807 RIZKY ALPIANSYAH RAMADHAN,1,pcs,640,1807 RIZKY ALPIANSYAH RAMADHAN,cancel gojek,Selesai
+Bahan Baku,(r) box combo crisbar,CB-PK-BAG-003,UIN Jakarta,02/03/2026,UINJKT-00783,Tidak terjual,1780 ADITYA PRATAMA,1,pcs,640,1780 ADITYA PRATAMA,Cancel Gojek Alya tidak dapat driver,Selesai
+Bahan Baku,(r) box combo crisbar,CB-PK-BAG-003,UIN Jakarta,02/03/2026,UINJKT-00784,Tidak terjual,1780 ADITYA PRATAMA,1,pcs,640,1780 ADITYA PRATAMA,cancel shopee sf-973t,Selesai
+Bahan Baku,(r) box combo crisbar,CB-PK-BAG-003,UIN Jakarta,02/03/2026,UINJKT-00785,Tidak terjual,1780 ADITYA PRATAMA,2,pcs,1280,1780 ADITYA PRATAMA,cancel gojek luna tidak ada driver ,Selesai
+Bahan Baku,(r) box combo crisbar,CB-PK-BAG-003,UIN Jakarta,02/03/2026,UINJKT-00786,Tidak terjual,1780 ADITYA PRATAMA,1,pcs,640,1780 ADITYA PRATAMA,cancel sf-543,Selesai
+Bahan Baku,(r) box combo crisbar,CB-PK-BAG-003,UIN Jakarta,02/03/2026,UINJKT-00787,Tidak terjual,1780 ADITYA PRATAMA,2,pcs,1280,1780 ADITYA PRATAMA,cancel gojek sally,Selesai
+Bahan Baku,(r) box combo crisbar,CB-PK-BAG-003,UIN Jakarta,02/03/2026,UINJKT-00788,Tidak terjual,1780 ADITYA PRATAMA,1,pcs,640,1780 ADITYA PRATAMA,cancel gojek melqy,Selesai
+Bahan Baku,(r) box combo crisbar,CB-PK-BAG-003,UIN Jakarta,05/03/2026,UINJKT-00796,Tidak terjual,1780 ADITYA PRATAMA,6,pcs,3840,1780 ADITYA PRATAMA,Cancel Void 1. Gojek Restya 2. Gojek Fanzul 3. Shopie SF-612 4. Gojek Veronica Prima,Selesai
+Bahan Baku,(r) box combo crisbar,CB-PK-BAG-003,UIN Jakarta,05/03/2026,UINJKT-00798,Tidak terjual,1780 ADITYA PRATAMA,1,pcs,640,1780 ADITYA PRATAMA,cancel gojek shafa,Selesai
+Bahan Baku,(r) box combo crisbar,CB-PK-BAG-003,Taman Kopo Indah,05/03/2026,Kopo-01466,Tidak terjual,1437 ISMA NENENG NURLIAN,1,pcs,640,1437 ISMA NENENG NURLIAN,cansellan Shopee food,Selesai
+Bahan Baku,(r) box combo crisbar,CB-PK-BAG-003,UIN Jakarta,06/03/2026,UINJKT-00801,Tidak terjual,1780 ADITYA PRATAMA,5,pcs,3200,1780 ADITYA PRATAMA,cancel gojek amabel,Selesai
+Bahan Baku,(r) box combo crisbar,CB-PK-BAG-003,UIN Jakarta,06/03/2026,UINJKT-00803,Tidak terjual,1780 ADITYA PRATAMA,1,pcs,640,1780 ADITYA PRATAMA,cancel gojek nisa,Selesai
+Bahan Baku,(r) box combo crisbar,CB-PK-BAG-003,UIN Jakarta,07/03/2026,UINJKT-00806,Tidak terjual,1780 ADITYA PRATAMA,1,pcs,640,1780 ADITYA PRATAMA,cancel gojek Hermansyah ,Selesai
+Bahan Baku,(r) box combo crisbar,CB-PK-BAG-003,Kukusan UI,07/03/2026,Kukusan-01196,Tidak terjual,1167 SINTIA APRILIANI,1,pcs,640,1167 SINTIA APRILIANI,orderan di cancel,Selesai
+Bahan Baku,(r) box combo crisbar,CB-PK-BAG-003,Uhamka,07/03/2026,UHAMKA-00248,Tidak terjual,1615 MILDA SITI NURAENI,10,pcs,6400,1615 MILDA SITI NURAENI,void,Selesai
+Bahan Baku,(r) box combo crisbar,CB-PK-BAG-003,Sukapura,11/03/2026,Sukapura-02458,Penelitian & Pengembangan,Rina,1,pcs,640,Rina,untuk trial gramasi fries dan trial sampel kresek,Selesai
+Bahan Baku,(r) box combo crisbar,CB-PK-BAG-003,Uhamka,12/03/2026,UHAMKA-00257,Tidak terjual,1615 MILDA SITI NURAENI,10,pcs,6400,1615 MILDA SITI NURAENI,void oleh customer ,Selesai
+Bahan Baku,(r) box combo crisbar,CB-PK-BAG-003,Kelapa Dua,13/03/2026,KLP2-00574,Tidak terjual,1242 DWINA RATU JOVITA,2,pcs,1280,1242 DWINA RATU JOVITA,waste cancel ,Selesai
+Bahan Baku,(r) box combo crisbar,CB-PK-BAG-003,UIN Jakarta,14/03/2026,UINJKT-00835,Kadaluarsa,1780 ADITYA PRATAMA,3,pcs,1920,1780 ADITYA PRATAMA,cancel gojek ,Selesai
+Bahan Baku,(r) box combo crisbar,CB-PK-BAG-003,UIN Jakarta,16/03/2026,UINJKT-00841,Tidak terjual,1780 ADITYA PRATAMA,4,pcs,2560,1780 ADITYA PRATAMA,cancel gojek ,Selesai
+Bahan Baku,(r) box combo crisbar,CB-PK-BAG-003,Unjani,17/03/2026,Unjani-01833,Rusak,1094 MUHAMMAD ABDUL HAKIM RIDHO,2,pcs,1280,1094 MUHAMMAD ABDUL HAKIM RIDHO,rusak kotor ,Selesai
+Bahan Baku,(r) box combo crisbar,CB-PK-BAG-003,Kelapa Dua,17/03/2026,KLP2-00584,Rusak,1242 DWINA RATU JOVITA,1,pcs,640,1242 DWINA RATU JOVITA,waste packaging cancel an,Selesai
+Bahan Baku,(r) box combo crisbar,CB-PK-BAG-003,Uhamka,17/03/2026,UHAMKA-00263,Tidak terjual,1615 MILDA SITI NURAENI,7,pcs,4480,1615 MILDA SITI NURAENI,-,Selesai
+Bahan Baku,(r) box combo crisbar,CB-PK-BAG-003,UIN Jakarta,20/03/2026,UINJKT-00853,Tidak terjual,1780 ADITYA PRATAMA,2,pcs,1280,1780 ADITYA PRATAMA,-,Selesai
+Bahan Baku,(r) box combo crisbar,CB-PK-BAG-003,Antapani,24/03/2026,Antap-01141,Tidak terjual,1851 INTAN OKTAVIANI,17,pcs,10880,1851 INTAN OKTAVIANI,-,Selesai
+Bahan Baku,(r) box combo crisbar,CB-PK-BAG-003,UIN Jakarta,25/03/2026,UINJKT-00865,Tidak terjual,1780 ADITYA PRATAMA,1,pcs,640,1780 ADITYA PRATAMA,cancel gojek ,Selesai
+Bahan Baku,(r) box combo crisbar,CB-PK-BAG-003,UIN Jakarta,25/03/2026,UINJKT-00866,Tidak terjual,1780 ADITYA PRATAMA,1,pcs,640,1780 ADITYA PRATAMA,cancel shopee ,Selesai
+Bahan Baku,(r) box combo crisbar,CB-PK-BAG-003,UIN Jakarta,25/03/2026,UINJKT-00867,Tidak terjual,1780 ADITYA PRATAMA,2,pcs,1280,1780 ADITYA PRATAMA,cancel gojek Aprilia,Selesai
+Bahan Baku,(r) box combo crisbar,CB-PK-BAG-003,UIN Jakarta,25/03/2026,UINJKT-00868,Tidak terjual,1780 ADITYA PRATAMA,2,pcs,1280,1780 ADITYA PRATAMA,-,Selesai
+Bahan Baku,(r) box combo crisbar,CB-PK-BAG-003,UIN Jakarta,25/03/2026,UINJKT-00869,Tidak terjual,1780 ADITYA PRATAMA,2,pcs,1280,1780 ADITYA PRATAMA,cancel gojek l,Selesai
+Bahan Baku,(r) box combo crisbar,CB-PK-BAG-003,Sukapura,29/03/2026,Sukapura-02544,Tidak terjual,1679 MUHAMAD HANAFI,1,pcs,640,1679 MUHAMAD HANAFI,cencel,Selesai
+Bahan Baku,(r) box combo crisbar,CB-PK-BAG-003,Kelapa Dua,29/03/2026,KLP2-00617,Tidak terjual,1242 DWINA RATU JOVITA,1,pcs,640,1242 DWINA RATU JOVITA,waste cancel kelapa dua,Selesai
+Bahan Baku,(r) box combo crisbar,CB-PK-BAG-003,Kelapa Dua,29/03/2026,KLP2-00618,Tidak terjual,1242 DWINA RATU JOVITA,1,pcs,640,1242 DWINA RATU JOVITA,waste cancel kelapa dua,Selesai
+Bahan Baku,(r) box combo crisbar,CB-PK-BAG-003,Kelapa Dua,29/03/2026,KLP2-00619,Tidak terjual,1242 DWINA RATU JOVITA,3,pcs,1920,1242 DWINA RATU JOVITA,waste cancel kelapa dua gojek ,Selesai
+Bahan Baku,(r) box combo crisbar,CB-PK-BAG-003,UIN Jakarta,30/03/2026,UINJKT-00887,Tidak terjual,1780 ADITYA PRATAMA,10,pcs,6400,1780 ADITYA PRATAMA,cancel online/gojek,Selesai
+Bahan Baku,(r) box combo crisbar,CB-PK-BAG-003,Unjani,30/03/2026,Unjani-01891,Tidak terjual,1094 MUHAMMAD ABDUL HAKIM RIDHO,1,pcs,640,1308 SERUNI JANNAH,cancel ,Selesai
+Bahan Baku,(r) box combo crisbar,CB-PK-BAG-003,Unpam,30/03/2026,UNPAM-00825,Tidak terjual,1807 RIZKY ALPIANSYAH RAMADHAN,1,pcs,640,1807 RIZKY ALPIANSYAH RAMADHAN,cancel gojek ,Selesai
+Bahan Baku,(r) box combo crisbar,CB-PK-BAG-003,Unpam,30/03/2026,UNPAM-00826,Tidak terjual,1807 RIZKY ALPIANSYAH RAMADHAN,1,pcs,640,1807 RIZKY ALPIANSYAH RAMADHAN,cancel gojek ,Selesai
+Bahan Baku,(r) box combo crisbar,CB-PK-BAG-003,Unpam,30/03/2026,UNPAM-00827,Tidak terjual,1807 RIZKY ALPIANSYAH RAMADHAN,1,pcs,640,1807 RIZKY ALPIANSYAH RAMADHAN,cancek gojek ,Selesai
+Bahan Baku,(r) box combo crisbar,CB-PK-BAG-003,UIN Jakarta,30/03/2026,UINJKT-00889,Tidak terjual,1807 RIZKY ALPIANSYAH RAMADHAN,3,pcs,1920,1807 RIZKY ALPIANSYAH RAMADHAN,cancel gojek,Selesai
+Bahan Baku,(r) box combo jbc,JB-PK-BAG-003,Ujung Berung,15/03/2026,UBER-01211,Rusak,1235 UJANG FIRMANSYAH,15,pcs,12075,1235 UJANG FIRMANSYAH,waste box pada nempel.rusak,Selesai
+Bahan Baku,(r) box combo jbc,JB-PK-BAG-003,Kelapa Dua,17/03/2026,KLP2-00584,Rusak,1242 DWINA RATU JOVITA,2,pcs,1610,1242 DWINA RATU JOVITA,waste packaging cancel an,Selesai
+Bahan Baku,(r) box combo jbc,JB-PK-BAG-003,Kelapa Dua,23/03/2026,KLP2-00594,Tidak terjual,1242 DWINA RATU JOVITA,2,pcs,1610,1242 DWINA RATU JOVITA,waste cancel,Selesai
+Bahan Baku,(r) box combo jbc,JB-PK-BAG-003,Binus,28/03/2026,Binus-00584,Rusak,1234 GRIDWI RAPININGSIH,4,pcs,3220,1234 GRIDWI RAPININGSIH,-,Selesai
+Bahan Baku,(r) box combo jbc,JB-PK-BAG-003,Ujung Berung,31/03/2026,UBER-01307,Rusak,1235 UJANG FIRMANSYAH,8,pcs,6440,1235 UJANG FIRMANSYAH,pada sobek dan basah,Selesai
+Bahan Baku,(r) bumbu bulgogi j-6aer2-05-01,GN-RM-CON-006,CK Crisbar Bandung,02/03/2026,ckC-00191,Penelitian & Pengembangan,Zaki,1000,g,68820,Zaki,waste sample pak Irfan tgl 2/3/26,Selesai
+Bahan Baku,(r) bumbu nashville j-894r1-01,GN-RM-CON-007,CK Crisbar Bandung,02/03/2026,ckC-00191,Penelitian & Pengembangan,Zaki,1000,g,77500,Zaki,waste sample pak Irfan tgl 2/3/26,Selesai
+Bahan Baku,(r) bumbu nasi goreng oriental j-7b3r1,GN-RM-CON-001,Trisakti,09/03/2026,Trisakti-01095,Tidak terjual,877 RAFFIADATUL KEMAL AT-THAARIQ,234,g,17922.06,877 RAFFIADATUL KEMAL AT-THAARIQ,waste bumbu nasi goreng keras/terlalu lama didiamkan dengan kondisi terbuka ,Selesai
+Bahan Baku,(r) bumbu nasi goreng oriental j-7b3r1,GN-RM-CON-001,Kukusan UI,21/03/2026,Kukusan-01267,Rusak,657 YUNITA PRASETIA PUTRI,1000,g,76590,657 YUNITA PRASETIA PUTRI,terendam banjir di gudang waktu hari raya idul fitri,Selesai
+Bahan Baku,(r) bumbu nasi goreng oriental j-7b3r1,GN-RM-CON-001,DC Crisbar Bandung,31/03/2026,dcC-00245,Rusak,Dian,1000,g,76590,Dian,di gigit tikus,Selesai
+Bahan Baku,(r) bumbu sweet & spicy j-8asr2-02,GN-RM-CON-015,Taman Kopo Indah,05/03/2026,Kopo-01459,Kadaluarsa,2004 ZAKIAH DANIELAH,109,g,7622.37,2004 ZAKIAH DANIELAH,-,Selesai
+Bahan Baku,(r) cabe rawit merah,GN-RM-PRD-008,Dramaga,01/03/2026,Dramaga-00851,Tidak terjual,1524 ALDO RIFALDI,200,g,17200,1524 ALDO RIFALDI,batang cabe ,Selesai
+Bahan Baku,(r) cabe rawit merah,GN-RM-PRD-008,Dramaga,02/03/2026,Dramaga-00858,Tidak terjual,1524 ALDO RIFALDI,700,g,60200,1524 ALDO RIFALDI,batang cabe ,Selesai
+Bahan Baku,(r) cabe rawit merah,GN-RM-PRD-008,Dramaga,03/03/2026,Dramaga-00866,Tidak terjual,1524 ALDO RIFALDI,300,g,25800,1524 ALDO RIFALDI,batang cabe,Selesai
+Bahan Baku,(r) cabe rawit merah,GN-RM-PRD-008,Metro Margahayu,03/03/2026,Metro-01517,Rusak,1946 RANGGA CHANDIRA RAMADAN,460,g,34500,1946 RANGGA CHANDIRA RAMADAN,busuk,Selesai
+Bahan Baku,(r) cabe rawit merah,GN-RM-PRD-008,Kelapa Dua,03/03/2026,KLP2-00545,Rusak,1242 DWINA RATU JOVITA,770,g,66220,1242 DWINA RATU JOVITA,waste batang cabe ,Selesai
+Bahan Baku,(r) cabe rawit merah,GN-RM-PRD-008,Dramaga,04/03/2026,Dramaga-00870,Tidak terjual,1524 ALDO RIFALDI,620,g,53320,1524 ALDO RIFALDI,batang cabe ,Selesai
+Bahan Baku,(r) cabe rawit merah,GN-RM-PRD-008,Melong,05/03/2026,Melong-00819,Tidak terjual,762 AHMAD FAUZAN,120,g,8640,762 AHMAD FAUZAN,-,Selesai
+Bahan Baku,(r) cabe rawit merah,GN-RM-PRD-008,Dramaga,05/03/2026,Dramaga-00876,Tidak terjual,1524 ALDO RIFALDI,531,g,45666,1524 ALDO RIFALDI,batang cabe ,Selesai
+Bahan Baku,(r) cabe rawit merah,GN-RM-PRD-008,Dramaga,06/03/2026,Dramaga-00885,Tidak terjual,1637 ILHAM RAMADHAN,500,g,43000,1637 ILHAM RAMADHAN,batang cabai,Selesai
+Bahan Baku,(r) cabe rawit merah,GN-RM-PRD-008,Dramaga,07/03/2026,Dramaga-00889,Tidak terjual,1637 ILHAM RAMADHAN,600,g,51600,1637 ILHAM RAMADHAN,batang cabai,Selesai
+Bahan Baku,(r) cabe rawit merah,GN-RM-PRD-008,Dramaga,08/03/2026,Dramaga-00895,Tidak terjual,1637 ILHAM RAMADHAN,800,g,68800,1637 ILHAM RAMADHAN,batang cabe,Selesai
+Bahan Baku,(r) cabe rawit merah,GN-RM-PRD-008,Melong,08/03/2026,Melong-00823,Tidak terjual,762 AHMAD FAUZAN,350,g,25200,762 AHMAD FAUZAN,-,Selesai
+Bahan Baku,(r) cabe rawit merah,GN-RM-PRD-008,Dramaga,09/03/2026,Dramaga-00899,Kadaluarsa,1542 MUHAMMAD RAIHAN SURYANA,1350,g,116100,1542 MUHAMMAD RAIHAN SURYANA,"sambal lewat holding time, jamur busuk, cabe busuk",Selesai
+Bahan Baku,(r) cabe rawit merah,GN-RM-PRD-008,Dramaga,09/03/2026,Dramaga-00900,Tidak terjual,1637 ILHAM RAMADHAN,550,g,47300,1637 ILHAM RAMADHAN,batang cabai,Selesai
+Bahan Baku,(r) cabe rawit merah,GN-RM-PRD-008,Melong,10/03/2026,Melong-00826,Tidak terjual,762 AHMAD FAUZAN,120,g,8640,762 AHMAD FAUZAN,-,Selesai
+Bahan Baku,(r) cabe rawit merah,GN-RM-PRD-008,Dramaga,10/03/2026,Dramaga-00901,Tidak terjual,1542 MUHAMMAD RAIHAN SURYANA,550,g,47300,1542 MUHAMMAD RAIHAN SURYANA,batang cabe dan cabe busuk,Selesai
+Bahan Baku,(r) cabe rawit merah,GN-RM-PRD-008,Unjani,11/03/2026,Unjani-01811,Rusak,529 NELLY LUTFIAH FITRIANI,300,g,24000,529 NELLY LUTFIAH FITRIANI,busuk,Selesai
+Bahan Baku,(r) cabe rawit merah,GN-RM-PRD-008,Dramaga,11/03/2026,Dramaga-00908,Tidak terjual,1542 MUHAMMAD RAIHAN SURYANA,850,g,73100,1542 MUHAMMAD RAIHAN SURYANA,batang cabe dan cabe bushk,Selesai
+Bahan Baku,(r) cabe rawit merah,GN-RM-PRD-008,Kelapa Dua,11/03/2026,KLP2-00567,Rusak,1242 DWINA RATU JOVITA,1600,g,137600,1242 DWINA RATU JOVITA,waste batang cabai dan jamur kelapa dua,Selesai
+Bahan Baku,(r) cabe rawit merah,GN-RM-PRD-008,Kelapa Dua,12/03/2026,KLP2-00570,Rusak,1242 DWINA RATU JOVITA,940,g,80840,1242 DWINA RATU JOVITA,waste batang cabe dan jamur,Selesai
+Bahan Baku,(r) cabe rawit merah,GN-RM-PRD-008,Kelapa Dua,13/03/2026,KLP2-00573,Rusak,1242 DWINA RATU JOVITA,1340,g,115240,1242 DWINA RATU JOVITA,waste batang cabai ,Selesai
+Bahan Baku,(r) cabe rawit merah,GN-RM-PRD-008,Sekeloa,13/03/2026,Sekeloa-02089,Rusak,1846 HANUN MAYASA,207,g,16560,1843 MUHAMMAD ALFAHRUL JANUAR RIZKI,-,Selesai
+Bahan Baku,(r) cabe rawit merah,GN-RM-PRD-008,Kelapa Dua,14/03/2026,KLP2-00577,Kadaluarsa,1541 ADITYA HERAWAN,582,g,50052,1541 ADITYA HERAWAN,batang,Selesai
+Bahan Baku,(r) cabe rawit merah,GN-RM-PRD-008,Metro Margahayu,15/03/2026,Metro-01548,Rusak,1978 SYIFA MAHFUBA,663,g,49725,346 DEDI ROHIMAT,busuk,Selesai
+Bahan Baku,(r) cabe rawit merah,GN-RM-PRD-008,Kelapa Dua,17/03/2026,KLP2-00585,Rusak,1242 DWINA RATU JOVITA,440,g,37840,1242 DWINA RATU JOVITA,waste batang dan bonggol cabai serta jamur,Selesai
+Bahan Baku,(r) cabe rawit merah,GN-RM-PRD-008,Melong,18/03/2026,Melong-00846,Tidak terjual,762 AHMAD FAUZAN,550,g,39600,762 AHMAD FAUZAN,-,Selesai
+Bahan Baku,(r) cabe rawit merah,GN-RM-PRD-008,Kelapa Dua,18/03/2026,KLP2-00586,Rusak,1242 DWINA RATU JOVITA,840,g,72240,1242 DWINA RATU JOVITA,waste batang dan bonggol,Selesai
+Bahan Baku,(r) cabe rawit merah,GN-RM-PRD-008,Kelapa Dua,19/03/2026,KLP2-00591,Tidak terjual,1081 ASEP RAMADHAN,748,g,64328,1081 ASEP RAMADHAN,waste batang cabe,Selesai
+Bahan Baku,(r) cabe rawit merah,GN-RM-PRD-008,Gerlong,20/03/2026,Gerlong-01149,Rusak,1288 BAYU SUANDA,2400,g,172800,1288 BAYU SUANDA,busuk,Selesai
+Bahan Baku,(r) cabe rawit merah,GN-RM-PRD-008,Sukapura,23/03/2026,Sukapura-02517,Tidak terjual,1583 FAHRY RAMDHANY,532,g,46816,1583 FAHRY RAMDHANY,batang cabe,Selesai
+Bahan Baku,(r) cabe rawit merah,GN-RM-PRD-008,Sukapura,01/03/2026,Sukapura-02526,Rusak,Tian,345,g,30360,Tian,revisi tanggal 1 maret 2026,Selesai
+Bahan Baku,(r) cabe rawit merah,GN-RM-PRD-008,Kelapa Dua,26/03/2026,KLP2-00607,Rusak,1242 DWINA RATU JOVITA,327,g,28122,1242 DWINA RATU JOVITA,waste batang dan bonggol,Selesai
+Bahan Baku,(r) cabe rawit merah,GN-RM-PRD-008,Kelapa Dua,27/03/2026,KLP2-00610,Rusak,1242 DWINA RATU JOVITA,512,g,44032,1242 DWINA RATU JOVITA,waste batang,Selesai
+Bahan Baku,(r) cabe rawit merah,GN-RM-PRD-008,Kelapa Dua,28/03/2026,KLP2-00612,Rusak,1242 DWINA RATU JOVITA,753,g,64758,1242 DWINA RATU JOVITA,waste bonggol,Selesai
+Bahan Baku,(r) cabe rawit merah,GN-RM-PRD-008,Kelapa Dua,29/03/2026,KLP2-00614,Kadaluarsa,1541 ADITYA HERAWAN,734,g,63124,1541 ADITYA HERAWAN,batang ,Selesai
+Bahan Baku,(r) cabe rawit merah,GN-RM-PRD-008,Kelapa Dua,30/03/2026,KLP2-00621,Tidak terjual,1081 ASEP RAMADHAN,674,g,57964,1081 ASEP RAMADHAN,waste batang cabe,Selesai
+Bahan Baku,(r) cabe rawit merah,GN-RM-PRD-008,Kelapa Dua,31/03/2026,KLP2-00624,Tidak terjual,MUHAMMAD RAFDI TRI HAWARI,920,g,79120,MUHAMMAD RAFDI TRI HAWARI,waste batang cabe,Selesai
+Bahan Baku,(r) cheese sauce sachet,GN-RM-SBL-001,UIN Jakarta,09/03/2026,UINJKT-00810,Tidak terjual,1159 MUHAMAD ALWAN FADILAH,2,sachet,3000,1159 MUHAMAD ALWAN FADILAH,cancelan online,Selesai
+Bahan Baku,(r) cheese sauce sachet,GN-RM-SBL-001,UIN Jakarta,09/03/2026,UINJKT-00811,Tidak terjual,1159 MUHAMAD ALWAN FADILAH,1,sachet,1500,1159 MUHAMAD ALWAN FADILAH,cancelan online,Selesai
+Bahan Baku,(r) cheese sauce sachet,GN-RM-SBL-001,Kelapa Dua,10/03/2026,KLP2-00563,Tidak terjual,1242 DWINA RATU JOVITA,1,sachet,1500,1242 DWINA RATU JOVITA,waste cancel ,Selesai
+Bahan Baku,(r) cheese sauce sachet,GN-RM-SBL-001,Jatinangor,11/03/2026,Jatinangor-00479,Tidak terjual,435 KHOERUL HAMID,1,sachet,1500,435 KHOERUL HAMID,pesanan cancel,Selesai
+Bahan Baku,(r) cheese sauce sachet,GN-RM-SBL-001,Binus,28/03/2026,Binus-00582,Kadaluarsa,1234 GRIDWI RAPININGSIH,6,sachet,9000,1234 GRIDWI RAPININGSIH,sudah lewat holding time,Selesai
+Bahan Baku,(r) cheese sauce sachet,GN-RM-SBL-001,Ujung Berung,29/03/2026,UBER-01292,Tidak terjual,1813 EGIANSYAH,1,sachet,1500,1813 EGIANSYAH,void,Selesai
+Bahan Baku,(r) cheese sauce sachet,GN-RM-SBL-001,Sukapura,29/03/2026,Sukapura-02544,Tidak terjual,1679 MUHAMAD HANAFI,1,sachet,1500,1679 MUHAMAD HANAFI,cencel,Selesai
+Bahan Baku,(r) cireng,CB-RM-FRZ-001,Kukusan UI,01/03/2026,Kukusan-01172,Tidak terjual,1184 DWI OCTAVIANTO PRASETYO,2,pcs,1620,1184 DWI OCTAVIANTO PRASETYO,karena jatoh kelantai,Selesai
+Bahan Baku,(r) cireng,CB-RM-FRZ-001,Jatinangor,04/03/2026,Jatinangor-00441,Kesalahan,1454 SAHRUL MAULANA,6,pcs,4860,REGGY 1058,pmsakn jm 5 sore miss komunikasi,Selesai
+Bahan Baku,(r) cireng,CB-RM-FRZ-001,Maranatha,06/03/2026,Marnath-00573,Tidak terjual,1509 SEPTIA DWI ERLANGGA,5,pcs,4050,1509 SEPTIA DWI ERLANGGA,cireng gosong,Selesai
+Bahan Baku,(r) cocoa powder,GN-RM-CON-002,Unla,04/03/2026,unl-00008,Training Trainer,963 REFI AULIA DEFIANA,100,g,21403.8,963 REFI AULIA DEFIANA,Training produk kids meal,Selesai
+Bahan Baku,(r) cocoa powder,GN-RM-CON-002,Unla,05/03/2026,Unla-00021,Training Trainer,963 REFI AULIA DEFIANA,30,g,6421.14,963 REFI AULIA DEFIANA,TRAINING UNLA KIDS MEAL,Selesai
+Bahan Baku,(r) cocoa powder,GN-RM-CON-002,Unisba,11/03/2026,Unisba-01180,Training Trainer,RM TAUFIK ARIFIN,30,g,6421.14,RM TAUFIK ARIFIN,training kids meal,Selesai
+Bahan Baku,(r) cone ice cream,CB-RM-GEN-001,Unjani,08/03/2026,Unjani-01803,Rusak,529 NELLY LUTFIAH FITRIANI,5,pcs,3000,529 NELLY LUTFIAH FITRIANI,bubuk,Selesai
+Bahan Baku,(r) cone ice cream,CB-RM-GEN-001,Gerlong,29/03/2026,Gerlong-01187,Rusak,1288 BAYU SUANDA,4,pcs,2400,1288 BAYU SUANDA,remuk,Selesai
+Bahan Baku,(r) creamer cair,GN-RM-DAI-001,Unla,05/03/2026,Unla-00021,Training Trainer,963 REFI AULIA DEFIANA,60,ml,3180,963 REFI AULIA DEFIANA,TRAINING UNLA KIDS MEAL,Selesai
+Bahan Baku,(r) creamer cair,GN-RM-DAI-001,Unisba,11/03/2026,Unisba-01180,Training Trainer,RM TAUFIK ARIFIN,60,ml,3180,RM TAUFIK ARIFIN,training kids meal,Selesai
+Bahan Baku,(r) creamer cair,GN-RM-DAI-001,Melong,05/03/2026,Melong-00831,Penelitian & Pengembangan,Rina,80,ml,4240,Rina,untuk bandingkan sampel dan trial merica kopoe kopoe untuk bumbu crisbar,Selesai
+Bahan Baku,(r) cup 10 oz kids meal,CB-PK-CUP-001,Unla,04/03/2026,unl-00008,Training Trainer,963 REFI AULIA DEFIANA,4,pcs,1180,963 REFI AULIA DEFIANA,Training produk kids meal,Selesai
+Bahan Baku,(r) cup 10 oz kids meal,CB-PK-CUP-001,Unla,05/03/2026,Unla-00021,Training Trainer,963 REFI AULIA DEFIANA,100,pcs,29500,963 REFI AULIA DEFIANA,TRAINING UNLA KIDS MEAL,Selesai
+Bahan Baku,(r) cup 10 oz kids meal,CB-PK-CUP-001,Unisba,11/03/2026,Unisba-01180,Training Trainer,RM TAUFIK ARIFIN,100,pcs,29500,RM TAUFIK ARIFIN,training kids meal,Selesai
+Bahan Baku,(r) cup 14 oz crisbar,CB-PK-CUP-002,UIN Jakarta,02/03/2026,UINJKT-00785,Tidak terjual,1780 ADITYA PRATAMA,2,pcs,1010,1780 ADITYA PRATAMA,cancel gojek luna tidak ada driver ,Selesai
+Bahan Baku,(r) cup 14 oz crisbar,CB-PK-CUP-002,UIN Jakarta,02/03/2026,UINJKT-00786,Tidak terjual,1780 ADITYA PRATAMA,1,pcs,505,1780 ADITYA PRATAMA,cancel sf-543,Selesai
+Bahan Baku,(r) cup 14 oz crisbar,CB-PK-CUP-002,UIN Jakarta,02/03/2026,UINJKT-00787,Tidak terjual,1780 ADITYA PRATAMA,1,pcs,505,1780 ADITYA PRATAMA,cancel gojek sally,Selesai
+Bahan Baku,(r) cup 14 oz crisbar,CB-PK-CUP-002,UIN Jakarta,02/03/2026,UINJKT-00788,Tidak terjual,1780 ADITYA PRATAMA,1,pcs,505,1780 ADITYA PRATAMA,cancel gojek melqy,Selesai
+Bahan Baku,(r) cup 14 oz crisbar,CB-PK-CUP-002,UIN Jakarta,05/03/2026,UINJKT-00798,Tidak terjual,1780 ADITYA PRATAMA,1,pcs,505,1780 ADITYA PRATAMA,cancel gojek shafa,Selesai
+Bahan Baku,(r) cup 14 oz crisbar,CB-PK-CUP-002,Taman Kopo Indah,05/03/2026,Kopo-01467,Tidak terjual,1437 ISMA NENENG NURLIAN,1,pcs,505,1437 ISMA NENENG NURLIAN,cansellan Gofood ,Selesai
+Bahan Baku,(r) cup 14 oz crisbar,CB-PK-CUP-002,UIN Jakarta,06/03/2026,UINJKT-00801,Tidak terjual,1780 ADITYA PRATAMA,5,pcs,2525,1780 ADITYA PRATAMA,cancel gojek amabel,Selesai
+Bahan Baku,(r) cup 14 oz crisbar,CB-PK-CUP-002,UIN Jakarta,06/03/2026,UINJKT-00803,Tidak terjual,1780 ADITYA PRATAMA,1,pcs,505,1780 ADITYA PRATAMA,cancel gojek nisa,Selesai
+Bahan Baku,(r) cup 14 oz crisbar,CB-PK-CUP-002,UIN Jakarta,07/03/2026,UINJKT-00806,Tidak terjual,1780 ADITYA PRATAMA,1,pcs,505,1780 ADITYA PRATAMA,cancel gojek Hermansyah ,Selesai
+Bahan Baku,(r) cup 14 oz crisbar,CB-PK-CUP-002,Unpam,07/03/2026,UNPAM-00737,Tidak terjual,1807 RIZKY ALPIANSYAH RAMADHAN,2,pcs,1010,1807 RIZKY ALPIANSYAH RAMADHAN,cancel gojek ,Selesai
+Bahan Baku,(r) cup 14 oz crisbar,CB-PK-CUP-002,Unpam,07/03/2026,UNPAM-00738,Tidak terjual,1807 RIZKY ALPIANSYAH RAMADHAN,2,pcs,1010,1807 RIZKY ALPIANSYAH RAMADHAN,cancel gojek,Selesai
+Bahan Baku,(r) cup 14 oz crisbar,CB-PK-CUP-002,Unpam,07/03/2026,UNPAM-00743,Tidak terjual,1807 RIZKY ALPIANSYAH RAMADHAN,1,pcs,505,1807 RIZKY ALPIANSYAH RAMADHAN,cancel gojek,Selesai
+Bahan Baku,(r) cup 14 oz crisbar,CB-PK-CUP-002,Kelapa Dua,07/03/2026,KLP2-00555,Tidak terjual,1242 DWINA RATU JOVITA,5,pcs,2525,1242 DWINA RATU JOVITA,waste cancel kelapa dua,Selesai
+Bahan Baku,(r) cup 14 oz crisbar,CB-PK-CUP-002,Kelapa Dua,10/03/2026,KLP2-00563,Tidak terjual,1242 DWINA RATU JOVITA,1,pcs,505,1242 DWINA RATU JOVITA,waste cancel ,Selesai
+Bahan Baku,(r) cup 14 oz crisbar,CB-PK-CUP-002,Kelapa Dua,13/03/2026,KLP2-00574,Tidak terjual,1242 DWINA RATU JOVITA,2,pcs,1010,1242 DWINA RATU JOVITA,waste cancel ,Selesai
+Bahan Baku,(r) cup 14 oz crisbar,CB-PK-CUP-002,UIN Jakarta,14/03/2026,UINJKT-00835,Kadaluarsa,1780 ADITYA PRATAMA,2,pcs,1010,1780 ADITYA PRATAMA,cancel gojek ,Selesai
+Bahan Baku,(r) cup 14 oz crisbar,CB-PK-CUP-002,Kukusan UI,18/03/2026,Kukusan-01232,Tidak terjual,1167 SINTIA APRILIANI,5,pcs,2525,1167 SINTIA APRILIANI,orderan di cancel tidak dapat driver,Selesai
+Bahan Baku,(r) cup 14 oz crisbar,CB-PK-CUP-002,Taman Kopo Indah,19/03/2026,Kopo-01528,Tidak terjual,1437 ISMA NENENG NURLIAN,1,pcs,505,1437 ISMA NENENG NURLIAN,cansellan Gofood ,Selesai
+Bahan Baku,(r) cup 14 oz crisbar,CB-PK-CUP-002,Taman Kopo Indah,22/03/2026,Kopo-01546,Tidak terjual,2004 ZAKIAH DANIELAH,2,pcs,1010,2004 ZAKIAH DANIELAH,cancel gofood,Selesai
+Bahan Baku,(r) cup 14 oz crisbar,CB-PK-CUP-002,Kelapa Dua,26/03/2026,KLP2-00609,Tidak terjual,1242 DWINA RATU JOVITA,7,pcs,3535,1242 DWINA RATU JOVITA,waste cancel an minuman,Selesai
+Bahan Baku,(r) cup 14 oz crisbar,CB-PK-CUP-002,Kelapa Dua,29/03/2026,KLP2-00619,Tidak terjual,1242 DWINA RATU JOVITA,4,pcs,2020,1242 DWINA RATU JOVITA,waste cancel kelapa dua gojek ,Selesai
+Bahan Baku,(r) cup 14 oz crisbar,CB-PK-CUP-002,UIN Jakarta,30/03/2026,UINJKT-00887,Tidak terjual,1780 ADITYA PRATAMA,2,pcs,1010,1780 ADITYA PRATAMA,cancel online/gojek,Selesai
+Bahan Baku,(r) cup 14 oz crisbar,CB-PK-CUP-002,Unjani,30/03/2026,Unjani-01891,Tidak terjual,1094 MUHAMMAD ABDUL HAKIM RIDHO,1,pcs,505,1308 SERUNI JANNAH,cancel ,Selesai
+Bahan Baku,(r) cup 14 oz crisbar,CB-PK-CUP-002,Unpam,30/03/2026,UNPAM-00825,Tidak terjual,1807 RIZKY ALPIANSYAH RAMADHAN,1,pcs,505,1807 RIZKY ALPIANSYAH RAMADHAN,cancel gojek ,Selesai
+Bahan Baku,(r) cup 14 oz crisbar,CB-PK-CUP-002,Unpam,30/03/2026,UNPAM-00827,Tidak terjual,1807 RIZKY ALPIANSYAH RAMADHAN,1,pcs,505,1807 RIZKY ALPIANSYAH RAMADHAN,cancek gojek ,Selesai
+Bahan Baku,(r) cup 14 oz jbc,JB-PK-CUP-001,Unpam,01/03/2026,UNPAM-00716,Tidak terjual,1807 RIZKY ALPIANSYAH RAMADHAN,2,pcs,1380,1807 RIZKY ALPIANSYAH RAMADHAN,cancel gojek ,Selesai
+Bahan Baku,(r) cup 14 oz polos,GJ-PK-CUP-001,Sukapura,11/03/2026,Sukapura-02458,Penelitian & Pengembangan,Rina,1,pcs,220,Rina,untuk trial gramasi fries dan trial sampel kresek,Selesai
+Bahan Baku,(r) cup sauce 100ml,GN-PK-CUP-001,UIN Jakarta,14/03/2026,UINJKT-00835,Kadaluarsa,1780 ADITYA PRATAMA,1,pcs,350,1780 ADITYA PRATAMA,cancel gojek ,Selesai
+Bahan Baku,(r) cup sauce 100ml,GN-PK-CUP-001,UIN Jakarta,25/03/2026,UINJKT-00869,Tidak terjual,1780 ADITYA PRATAMA,1,pcs,350,1780 ADITYA PRATAMA,cancel gojek l,Selesai
+Bahan Baku,(r) cup sauce 100ml,GN-PK-CUP-001,UIN Jakarta,27/03/2026,UINJKT-00877,Tidak terjual,1780 ADITYA PRATAMA,1,pcs,350,1780 ADITYA PRATAMA,cancel sf-19 driver tidak menemukan outlet ,Selesai
+Bahan Baku,(r) daun jeruk,CB-RM-PRD-001,Unjani,03/03/2026,Unjani-01778,Rusak,1094 MUHAMMAD ABDUL HAKIM RIDHO,103,g,3811,1094 MUHAMMAD ABDUL HAKIM RIDHO,busuk dan kering,Selesai
+Bahan Baku,(r) daun jeruk,CB-RM-PRD-001,IKPN Bintaro,03/03/2026,Bintaro-00291,Kadaluarsa,1105 MUHAMMAD KAHFI,70,g,3290,1933 RENDY FINKY PATTY,-,Selesai
+Bahan Baku,(r) daun jeruk,CB-RM-PRD-001,Antapani,12/03/2026,Antap-01086,Rusak,1456 MOCHAMAD INDRA MAULANA,22,g,814,1456 MOCHAMAD INDRA MAULANA,daun jeruk kering,Selesai
+Bahan Baku,(r) daun jeruk,CB-RM-PRD-001,Jatinangor,15/03/2026,Jatinangor-00493,Tidak terjual,435 KHOERUL HAMID,300,g,11100,435 KHOERUL HAMID,-,Selesai
+Bahan Baku,(r) daun jeruk,CB-RM-PRD-001,Sekeloa,17/03/2026,Sekeloa-02098,Tidak terjual,1843 MUHAMMAD ALFAHRUL JANUAR RIZKI,6,g,222,1843 MUHAMMAD ALFAHRUL JANUAR RIZKI,daun jeruk kering,Selesai
+Bahan Baku,(r) daun jeruk,CB-RM-PRD-001,UIN Jakarta,23/03/2026,UINJKT-00860,Rusak,1780 ADITYA PRATAMA,176,g,8272,1780 ADITYA PRATAMA,busuk ,Selesai
+Bahan Baku,(r) daun jeruk,CB-RM-PRD-001,Unpar,28/03/2026,Unpar-01341,Rusak,1648 MIRZA YANUAR ARIFIN,108,g,3996,1661 INDAH MAWARNI,rusak,Selesai
+Bahan Baku,(r) daun jeruk,CB-RM-PRD-001,Widyatama,29/03/2026,Widyatama-01365,Tidak terjual,2003 VICKY CAHYA MAHENDRA,96,g,3552,2003 VICKY CAHYA MAHENDRA,daun jeruk sudah jelek ,Selesai
+Bahan Baku,(r) daun jeruk,CB-RM-PRD-001,Widyatama,31/03/2026,Widyatama-01373,Rusak,1207 RIZKA AMELIA SUYONO,41,g,1517,1207 RIZKA AMELIA SUYONO,busuk,Selesai
+Bahan Baku,(r) daun kemangi,BB-058,Kelapa Dua,01/03/2026,KLP2-00537,Rusak,1242 DWINA RATU JOVITA,140,g,4760,1242 DWINA RATU JOVITA,waste batang kemangi,Selesai
+Bahan Baku,(r) daun kemangi,BB-058,Gerlong,01/03/2026,Gerlong-01076,Rusak,1601 ASEP TRISNA,250,g,8000,1601 ASEP TRISNA,LAYU DAN BASAH,Selesai
+Bahan Baku,(r) daun kemangi,BB-058,Kelapa Dua,03/03/2026,KLP2-00543,Rusak,1242 DWINA RATU JOVITA,117,g,3978,1242 DWINA RATU JOVITA,-,Selesai
+Bahan Baku,(r) daun kemangi,BB-058,Ujung Berung,05/03/2026,UBER-01147,Rusak,2488 FAKHRI FAUZAN PRATAMA,410,g,13120,1813 EGIANSYAH,daun kemangi sudah hitam,Selesai
+Bahan Baku,(r) daun kemangi,BB-058,Unpar,08/03/2026,Unpar-01300,Kadaluarsa,1648 MIRZA YANUAR ARIFIN,1193,g,38176,1648 MIRZA YANUAR ARIFIN,busuk,Selesai
+Bahan Baku,(r) daun kemangi,BB-058,Gerlong,11/03/2026,Gerlong-01111,Rusak,1601 ASEP TRISNA,511,g,16352,1601 ASEP TRISNA,-,Selesai
+Bahan Baku,(r) daun kemangi,BB-058,Dramaga,11/03/2026,Dramaga-00912,Kadaluarsa,899 ARIANA HERAWATI,193,g,6562,899 ARIANA HERAWATI,lewat holding time ,Selesai
+Bahan Baku,(r) daun kemangi,BB-058,Antapani,12/03/2026,Antap-01079,Rusak,1851 INTAN OKTAVIANI,238,g,7616,1851 INTAN OKTAVIANI,layu hitam,Selesai
+Bahan Baku,(r) daun kemangi,BB-058,Antapani,12/03/2026,Antap-01085,Rusak,1456 MOCHAMAD INDRA MAULANA,344,g,11008,1456 MOCHAMAD INDRA MAULANA,daun kemangi busuk,Selesai
+Bahan Baku,(r) daun kemangi,BB-058,Metro Margahayu,15/03/2026,Metro-01547,Rusak,1978 SYIFA MAHFUBA,80,g,2560,346 DEDI ROHIMAT,busuk,Selesai
+Bahan Baku,(r) daun kemangi,BB-058,Kelapa Dua,16/03/2026,KLP2-00582,Tidak terjual,1541 ADITYA HERAWAN,266,g,9044,1541 ADITYA HERAWAN,batang daun kemangi,Selesai
+Bahan Baku,(r) daun kemangi,BB-058,Gerlong,20/03/2026,Gerlong-01153,Rusak,1288 BAYU SUANDA,790,g,25280,1288 BAYU SUANDA,"batang jamur, batang kemangi",Selesai
+Bahan Baku,(r) daun kemangi,BB-058,Jatinangor,23/03/2026,Jatinangor-00527,Rusak,435 KHOERUL HAMID,3580,g,114560,435 KHOERUL HAMID,pada hitam,Selesai
+Bahan Baku,(r) daun kemangi,BB-058,Antapani,25/03/2026,Antap-01150,Rusak,1456 MOCHAMAD INDRA MAULANA,119,g,3808,1456 MOCHAMAD INDRA MAULANA,daun kemangi busuk ,Selesai
+Bahan Baku,(r) daun kemangi,BB-058,Sukapura,01/03/2026,Sukapura-02526,Rusak,Tian,16.5,g,528,Tian,revisi tanggal 1 maret 2026,Selesai
+Bahan Baku,(r) daun kemangi,BB-058,Gerlong,25/03/2026,Gerlong-01172,Rusak,1288 BAYU SUANDA,300,g,9600,1288 BAYU SUANDA,-,Selesai
+Bahan Baku,(r) daun kemangi,BB-058,Metro Margahayu,27/03/2026,Metro-01574,Rusak,1978 SYIFA MAHFUBA,788,g,25216,346 DEDI ROHIMAT,busuk,Selesai
+Bahan Baku,(r) daun kemangi,BB-058,Unpar,28/03/2026,Unpar-01340,Rusak,1648 MIRZA YANUAR ARIFIN,1722,g,55104,1661 INDAH MAWARNI,rusak,Selesai
+Bahan Baku,(r) daun kemangi,BB-058,Jatinangor,29/03/2026,Jatinangor-00546,Rusak,435 KHOERUL HAMID,1500,g,48000,435 KHOERUL HAMID,sudah pada hitam,Selesai
+Bahan Baku,(r) daun kemangi,BB-058,Antapani,30/03/2026,Antap-01166,Rusak,1851 INTAN OKTAVIANI,213,g,6816,1851 INTAN OKTAVIANI,-,Selesai
+Bahan Baku,(r) daun kemangi,BB-058,Gerlong,31/03/2026,Gerlong-01195,Tidak terjual,1288 BAYU SUANDA,535,g,17120,1288 BAYU SUANDA,-,Selesai
+Bahan Baku,(r) daun kemangi,BB-058,Metro Margahayu,31/03/2026,Metro-01590,Rusak,1978 SYIFA MAHFUBA,67,g,2144,346 DEDI ROHIMAT,kemangi busuk,Selesai
+Bahan Baku,(r) daun kemangi,BB-058,Jatinangor,31/03/2026,Jatinangor-00551,Rusak,435 KHOERUL HAMID,380,g,12160,435 KHOERUL HAMID,-,Selesai
+Bahan Baku,(r) daun kemangi,BB-058,Kelapa Dua,31/03/2026,KLP2-00626,Rusak,1242 DWINA RATU JOVITA,112,g,3808,1242 DWINA RATU JOVITA,waste batang kemangi ,Selesai
+Bahan Baku,(r) gas tabung,GN-RM-GEN-001,Office Crisbar,12/03/2026,off-00004,Training Trainer,1774 MUHAMAD RIZALDI SULAEMAN,1,tabung @12kg,211000,1774 MUHAMAD RIZALDI SULAEMAN,kebutuhan training,Selesai
+Bahan Baku,(r) green tea,CB-RM-DRY-002,Unla,04/03/2026,unl-00006,Kesalahan,963 REFI AULIA DEFIANA,25,g,6526.04,963 REFI AULIA DEFIANA,kesalahan pembuatan ,Selesai
+Bahan Baku,(r) green tea,CB-RM-DRY-002,UIN Jakarta,10/03/2026,UINJKT-00816,Kadaluarsa,1780 ADITYA PRATAMA,765,g,199696.75,1780 ADITYA PRATAMA,sudah melebihi shelf life ,Selesai
+Bahan Baku,(r) green tea,CB-RM-DRY-002,Taman Kopo Indah,11/03/2026,Kopo-01491,Kadaluarsa,2004 ZAKIAH DANIELAH,25,g,6526.04,2004 ZAKIAH DANIELAH,waste,Selesai
+Bahan Baku,(r) green tea,CB-RM-DRY-002,Sekeloa,14/03/2026,Sekeloa-02090,Kadaluarsa,Lauhil99,25,g,6526.04,Lauhil99,tidak terjual dan telah melebihi holding time ,Selesai
+Bahan Baku,(r) gula cair,GN-RM-DRY-003,Unla,04/03/2026,unl-00008,Training Trainer,963 REFI AULIA DEFIANA,50,ml,675,963 REFI AULIA DEFIANA,Training produk kids meal,Selesai
+Bahan Baku,(r) gula cair,GN-RM-DRY-003,Unla,05/03/2026,Unla-00021,Training Trainer,963 REFI AULIA DEFIANA,30,ml,405,963 REFI AULIA DEFIANA,TRAINING UNLA KIDS MEAL,Selesai
+Bahan Baku,(r) gula cair,GN-RM-DRY-003,Melong,05/03/2026,Melong-00831,Penelitian & Pengembangan,Rina,50,ml,675,Rina,untuk bandingkan sampel dan trial merica kopoe kopoe untuk bumbu crisbar,Selesai
+Bahan Baku,(r) gula cair,GN-RM-DRY-003,Unisba,18/03/2026,Unisba-01193,Rusak,RM TAUFIK ARIFIN,7500,ml,101250,RM TAUFIK ARIFIN,kadaluarsa ,Selesai
+Bahan Baku,(r) gula cair,GN-RM-DRY-003,Jatinangor,31/03/2026,Jatinangor-00553,Rusak,62 ROHIMAN,3260,ml,44010,62 ROHIMAN,banyak semut ,Selesai
+Bahan Baku,(r) jamur tiram,GN-RM-PRD-010,Kelapa Dua,01/03/2026,KLP2-00538,Kadaluarsa,1541 ADITYA HERAWAN,683,g,17758,1541 ADITYA HERAWAN,batang,Selesai
+Bahan Baku,(r) jamur tiram,GN-RM-PRD-010,Dramaga,01/03/2026,Dramaga-00854,Kadaluarsa,1853 XENA ANGGALE LEWENUSSA ,1750,g,45500,899 ARIANA HERAWATI,melewati holding time ,Selesai
+Bahan Baku,(r) jamur tiram,GN-RM-PRD-010,Trisakti,02/03/2026,Trisakti-01028,Kadaluarsa,877 RAFFIADATUL KEMAL AT-THAARIQ,90,g,2340,877 RAFFIADATUL KEMAL AT-THAARIQ,kadaluarsa ,Selesai
+Bahan Baku,(r) jamur tiram,GN-RM-PRD-010,Cihanjuang,03/03/2026,Cihanjuang-01269,Kadaluarsa,1579 MOHAMAD RIFKY RAMDHANI,340,g,8500,1579 MOHAMAD RIFKY RAMDHANI,jamur benyek dan bau,Selesai
+Bahan Baku,(r) jamur tiram,GN-RM-PRD-010,Kelapa Dua,03/03/2026,KLP2-00543,Rusak,1242 DWINA RATU JOVITA,623,g,16198,1242 DWINA RATU JOVITA,-,Selesai
+Bahan Baku,(r) jamur tiram,GN-RM-PRD-010,UIN Jakarta,04/03/2026,UINJKT-00791,Tidak terjual,1159 MUHAMAD ALWAN FADILAH,600,g,15600,1159 MUHAMAD ALWAN FADILAH,batang jamur,Selesai
+Bahan Baku,(r) jamur tiram,GN-RM-PRD-010,UIN Jakarta,08/03/2026,UINJKT-00808,Tidak terjual,1159 MUHAMAD ALWAN FADILAH,692,g,17992,1159 MUHAMAD ALWAN FADILAH,batang jamur,Selesai
+Bahan Baku,(r) jamur tiram,GN-RM-PRD-010,Dramaga,09/03/2026,Dramaga-00899,Kadaluarsa,1542 MUHAMMAD RAIHAN SURYANA,1700,g,44200,1542 MUHAMMAD RAIHAN SURYANA,"sambal lewat holding time, jamur busuk, cabe busuk",Selesai
+Bahan Baku,(r) jamur tiram,GN-RM-PRD-010,Kelapa Dua,11/03/2026,KLP2-00567,Rusak,1242 DWINA RATU JOVITA,680,g,17680,1242 DWINA RATU JOVITA,waste batang cabai dan jamur kelapa dua,Selesai
+Bahan Baku,(r) jamur tiram,GN-RM-PRD-010,Sukapura,12/03/2026,Sukapura-02461,Training Trainer,1774 MUHAMAD RIZALDI SULAEMAN,60,g,1500,1774 MUHAMAD RIZALDI SULAEMAN,-,Selesai
+Bahan Baku,(r) jamur tiram,GN-RM-PRD-010,Kelapa Dua,12/03/2026,KLP2-00570,Rusak,1242 DWINA RATU JOVITA,420,g,10920,1242 DWINA RATU JOVITA,waste batang cabe dan jamur,Selesai
+Bahan Baku,(r) jamur tiram,GN-RM-PRD-010,Kelapa Dua,14/03/2026,KLP2-00576,Kadaluarsa,1541 ADITYA HERAWAN,218,g,5668,1541 ADITYA HERAWAN,batang,Selesai
+Bahan Baku,(r) jamur tiram,GN-RM-PRD-010,Kelapa Dua,17/03/2026,KLP2-00585,Rusak,1242 DWINA RATU JOVITA,700,g,18200,1242 DWINA RATU JOVITA,waste batang dan bonggol cabai serta jamur,Selesai
+Bahan Baku,(r) jamur tiram,GN-RM-PRD-010,Kelapa Dua,18/03/2026,KLP2-00586,Rusak,1242 DWINA RATU JOVITA,1020,g,26520,1242 DWINA RATU JOVITA,waste batang dan bonggol,Selesai
+Bahan Baku,(r) jamur tiram,GN-RM-PRD-010,Ujung Berung,18/03/2026,UBER-01238,Kadaluarsa,1813 EGIANSYAH,60,g,1500,1813 EGIANSYAH,melebihi hding time,Selesai
+Bahan Baku,(r) jamur tiram,GN-RM-PRD-010,Dramaga,19/03/2026,Dramaga-00945,Kadaluarsa,1637 ILHAM RAMADHAN,3000,g,78000,899 ARIANA HERAWATI,lewat holding time ,Selesai
+Bahan Baku,(r) jamur tiram,GN-RM-PRD-010,UIN Bandung,19/03/2026,UINBDG-00601,Tidak terjual,MUHAMMAD RAFI ROZAAN,900,g,22500,MUHAMMAD RAFI ROZAAN,tangkai serta bagian yang tak layak pakai,Selesai
+Bahan Baku,(r) jamur tiram,GN-RM-PRD-010,Kelapa Dua,19/03/2026,KLP2-00590,Tidak terjual,1081 ASEP RAMADHAN,580,g,15080,1081 ASEP RAMADHAN,waste bonggol jamur,Selesai
+Bahan Baku,(r) jamur tiram,GN-RM-PRD-010,UIN Jakarta,20/03/2026,UINJKT-00852,Kadaluarsa,1780 ADITYA PRATAMA,1620,g,42120,1780 ADITYA PRATAMA,batang jamur ,Selesai
+Bahan Baku,(r) jamur tiram,GN-RM-PRD-010,Gerlong,20/03/2026,Gerlong-01146,Rusak,2140 ILHAM AENA SAPUTRA,1826,g,45650,335 GALIH SEPTENDI,rusak,Selesai
+Bahan Baku,(r) jamur tiram,GN-RM-PRD-010,Gerlong,20/03/2026,Gerlong-01153,Rusak,1288 BAYU SUANDA,424,g,10600,1288 BAYU SUANDA,"batang jamur, batang kemangi",Selesai
+Bahan Baku,(r) jamur tiram,GN-RM-PRD-010,Unpam,21/03/2026,UNPAM-00793,Rusak,1756 DITA DWI ASTUTI,3500,g,91000,1756 DITA DWI ASTUTI,bau,Selesai
+Bahan Baku,(r) jamur tiram,GN-RM-PRD-010,UIN Jakarta,22/03/2026,UINJKT-00858,Rusak,1780 ADITYA PRATAMA,4466,g,116116,1780 ADITYA PRATAMA,rusak dari supplier (kecil),Selesai
+Bahan Baku,(r) jamur tiram,GN-RM-PRD-010,IKPN Bintaro,24/03/2026,Bintaro-00404,Rusak,1558 RIVALDI ROMANSYAH,120,g,3120,1933 RENDY FINKY PATTY,-,Selesai
+Bahan Baku,(r) jamur tiram,GN-RM-PRD-010,Kelapa Dua,26/03/2026,KLP2-00607,Rusak,1242 DWINA RATU JOVITA,379,g,9854,1242 DWINA RATU JOVITA,waste batang dan bonggol,Selesai
+Bahan Baku,(r) jamur tiram,GN-RM-PRD-010,Metro Margahayu,27/03/2026,Metro-01570,Rusak,1978 SYIFA MAHFUBA,505,g,12625,346 DEDI ROHIMAT,busuk,Selesai
+Bahan Baku,(r) jamur tiram,GN-RM-PRD-010,Kelapa Dua,27/03/2026,KLP2-00610,Rusak,1242 DWINA RATU JOVITA,147,g,3822,1242 DWINA RATU JOVITA,waste batang,Selesai
+Bahan Baku,(r) jamur tiram,GN-RM-PRD-010,Metro Margahayu,27/03/2026,Metro-01577,Rusak,346 DEDI ROHIMAT,1074,g,26850,346 DEDI ROHIMAT,busuk,Selesai
+Bahan Baku,(r) jamur tiram,GN-RM-PRD-010,Kelapa Dua,28/03/2026,KLP2-00612,Rusak,1242 DWINA RATU JOVITA,404,g,10504,1242 DWINA RATU JOVITA,waste bonggol,Selesai
+Bahan Baku,(r) jamur tiram,GN-RM-PRD-010,Metro Margahayu,28/03/2026,Metro-01579,Rusak,346 DEDI ROHIMAT,1600,g,40000,346 DEDI ROHIMAT,busuk,Selesai
+Bahan Baku,(r) jamur tiram,GN-RM-PRD-010,Kelapa Dua,29/03/2026,KLP2-00615,Kadaluarsa,1541 ADITYA HERAWAN,224,g,5824,1541 ADITYA HERAWAN,batang,Selesai
+Bahan Baku,(r) jamur tiram,GN-RM-PRD-010,Kelapa Dua,30/03/2026,KLP2-00620,Tidak terjual,1081 ASEP RAMADHAN,229,g,5954,1081 ASEP RAMADHAN,waste batang jamur ,Selesai
+Bahan Baku,(r) jamur tiram,GN-RM-PRD-010,Kelapa Dua,31/03/2026,KLP2-00625,Tidak terjual,MUHAMMAD RAFDI TRI HAWARI,387,g,10062,MUHAMMAD RAFDI TRI HAWARI,waste batang jamur,Selesai
+Bahan Baku,(r) jamur tiram,GN-RM-PRD-010,Metro Margahayu,31/03/2026,Metro-01593,Rusak,1978 SYIFA MAHFUBA,161,g,4025,346 DEDI ROHIMAT,sudah tidak fresh,Selesai
+Bahan Baku,(r) kale spicy,GN-RM-SBL-006,Ujung Berung,10/03/2026,UBER-01174,Tidak terjual,1266 ALYA PUTRI ZAHIRA,120,g,15000,1266 ALYA PUTRI ZAHIRA,void aplikasi,Selesai
+Bahan Baku,(r) kale spicy,GN-RM-SBL-006,IKPN Bintaro,15/03/2026,Bintaro-00360,Test Food / RM,1558 RIVALDI ROMANSYAH,15,g,1875,1933 RENDY FINKY PATTY,rsr,Selesai
+Bahan Baku,(r) kale spicy,GN-RM-SBL-006,Unla,16/03/2026,Unla-00062,Training Trainer,1619 DWI YUDHA PANGESTU,16,g,2000,963 REFI AULIA DEFIANA,nampan cust tumpah licin ( training nampan),Selesai
+Bahan Baku,(r) kale spicy,GN-RM-SBL-006,Antapani,17/03/2026,Antap-01106,Tidak terjual,1851 INTAN OKTAVIANI,10,g,1250,1851 INTAN OKTAVIANI,-,Selesai
+Bahan Baku,(r) kale spicy,GN-RM-SBL-006,Ujung Berung,18/03/2026,UBER-01233,Tidak terjual,1266 ALYA PUTRI ZAHIRA,8,g,1000,1266 ALYA PUTRI ZAHIRA,cancel void ,Selesai
+Bahan Baku,(r) kale spicy,GN-RM-SBL-006,Ujung Berung,20/03/2026,UBER-01250,Tidak terjual,1266 ALYA PUTRI ZAHIRA,12,g,1500,1266 ALYA PUTRI ZAHIRA,cancel void,Selesai
+Bahan Baku,(r) kale spicy,GN-RM-SBL-006,Ujung Berung,23/03/2026,UBER-01265,Tidak terjual,1813 EGIANSYAH,7,g,875,1813 EGIANSYAH,pesanan di batalkan,Selesai
+Bahan Baku,(r) kale spicy,GN-RM-SBL-006,Ujung Berung,24/03/2026,UBER-01271,Tidak terjual,1266 ALYA PUTRI ZAHIRA,19,g,2375,1266 ALYA PUTRI ZAHIRA,-,Selesai
+Bahan Baku,(r) kale spicy,GN-RM-SBL-006,Ujung Berung,29/03/2026,UBER-01292,Tidak terjual,1813 EGIANSYAH,8,g,1000,1813 EGIANSYAH,void,Selesai
+Bahan Baku,(r) kale spicy sachet,GN-RM-SBL-007,Dramaga,02/03/2026,Dramaga-00861,Test Food / RM,899 ARIANA HERAWATI,1,sachet,1100,899 ARIANA HERAWATI,testfood rsr,Selesai
+Bahan Baku,(r) kale spicy sachet,GN-RM-SBL-007,Kelapa Dua,03/03/2026,KLP2-00541,Tidak terjual,1242 DWINA RATU JOVITA,1,sachet,1100,1242 DWINA RATU JOVITA,waste cancel ,Selesai
+Bahan Baku,(r) kale spicy sachet,GN-RM-SBL-007,Kelapa Dua,07/03/2026,KLP2-00555,Tidak terjual,1242 DWINA RATU JOVITA,5,sachet,5500,1242 DWINA RATU JOVITA,waste cancel kelapa dua,Selesai
+Bahan Baku,(r) kale spicy sachet,GN-RM-SBL-007,Dramaga,10/03/2026,Dramaga-00903,Test Food / RM,899 ARIANA HERAWATI,1,sachet,1100,899 ARIANA HERAWATI,-,Selesai
+Bahan Baku,(r) kale spicy sachet,GN-RM-SBL-007,Kelapa Dua,13/03/2026,KLP2-00574,Tidak terjual,1242 DWINA RATU JOVITA,1,sachet,1100,1242 DWINA RATU JOVITA,waste cancel ,Selesai
+Bahan Baku,(r) kale spicy sachet,GN-RM-SBL-007,Dramaga,13/03/2026,Dramaga-00925,Test Food / RM,899 ARIANA HERAWATI,1,sachet,1100,899 ARIANA HERAWATI,-,Selesai
+Bahan Baku,(r) kale spicy sachet,GN-RM-SBL-007,Uhamka,15/03/2026,UHAMKA-00261,Tidak terjual,1615 MILDA SITI NURAENI,5,sachet,5500,1615 MILDA SITI NURAENI,void customer ,Selesai
+Bahan Baku,(r) kale spicy sachet,GN-RM-SBL-007,Uhamka,17/03/2026,UHAMKA-00263,Tidak terjual,1615 MILDA SITI NURAENI,7,sachet,7700,1615 MILDA SITI NURAENI,-,Selesai
+Bahan Baku,(r) kale spicy sachet,GN-RM-SBL-007,UIN Jakarta,20/03/2026,UINJKT-00855,Test Food / RM,1780 ADITYA PRATAMA,1,sachet,1100,1780 ADITYA PRATAMA,-,Selesai
+Bahan Baku,(r) kale spicy sachet,GN-RM-SBL-007,Dramaga,25/03/2026,Dramaga-01005,Test Food / RM,899 ARIANA HERAWATI,1,sachet,1100,899 ARIANA HERAWATI,testfood rsr rm,Selesai
+Bahan Baku,(r) kale spicy sachet,GN-RM-SBL-007,Dramaga,28/03/2026,Dramaga-01018,Test Food / RM,899 ARIANA HERAWATI,1,sachet,1100,899 ARIANA HERAWATI,testfood rsr rm,Selesai
+Bahan Baku,(r) kale spicy sachet,GN-RM-SBL-007,Dramaga,29/03/2026,Dramaga-01023,Test Food / RM,899 ARIANA HERAWATI,1,sachet,1100,899 ARIANA HERAWATI,-,Selesai
+Bahan Baku,(r) kale spicy sachet,GN-RM-SBL-007,UIN Jakarta,31/03/2026,UINJKT-00891,Test Food / RM,1780 ADITYA PRATAMA,1,sachet,1100,1780 ADITYA PRATAMA,test food rm,Selesai
+Bahan Baku,(r) keju mozzarella,GN-RM-DAI-003,Uhamka,01/03/2026,UHAMKA-00230,Kadaluarsa,1615 MILDA SITI NURAENI,1438,g,141103.75,1615 MILDA SITI NURAENI,jamuran,Selesai
+Bahan Baku,(r) kertas nasi coklat,BB-076,Ujung Berung,18/03/2026,UBER-01240,Kadaluarsa,1813 EGIANSYAH,6,lembar,600,1813 EGIANSYAH,-,Selesai
+Bahan Baku,(r) kerupuk,GN-RM-DRY-013,Ujung Berung,14/03/2026,UBER-01192,Rusak,1813 EGIANSYAH,124,g,3224,1813 EGIANSYAH,sudah alot,Selesai
+Bahan Baku,(r) kerupuk,GN-RM-DRY-013,Unjani,29/03/2026,Unjani-01886,Kesalahan,1094 MUHAMMAD ABDUL HAKIM RIDHO,520,g,13000,1094 MUHAMMAD ABDUL HAKIM RIDHO,bantat,Selesai
+Bahan Baku,(r) kimchi,GN-RM-GEN-006,Ujung Berung,18/03/2026,UBER-01242,Kadaluarsa,1813 EGIANSYAH,60,g,2868.48,1813 EGIANSYAH,tidak di bawa,Selesai
+Bahan Baku,(r) kol,GN-RM-PRD-001,Taman Kopo Indah,01/03/2026,Kopo-01446,Tidak terjual,1437 ISMA NENENG NURLIAN,294,g,3528,1437 ISMA NENENG NURLIAN,penyortiran yang tidak layak/hitam dan bonggolnya ,Selesai
+Bahan Baku,(r) kol,GN-RM-PRD-001,Uhamka,02/03/2026,UHAMKA-00233,Rusak,1615 MILDA SITI NURAENI,2120,g,29680,1615 MILDA SITI NURAENI,busuk,Selesai
+Bahan Baku,(r) kol,GN-RM-PRD-001,Sekeloa,02/03/2026,Sekeloa-02049,Rusak,1843 MUHAMMAD ALFAHRUL JANUAR RIZKI,663,g,7956,1843 MUHAMMAD ALFAHRUL JANUAR RIZKI,kol busuk,Selesai
+Bahan Baku,(r) kol,GN-RM-PRD-001,UIN Bandung,03/03/2026,UINBDG-00576,Tidak terjual,2303 MUHAMAD RIZKI MAULANA ,1128,g,13536,2303 MUHAMAD RIZKI,ngkol kecil,Selesai
+Bahan Baku,(r) kol,GN-RM-PRD-001,Sekeloa,11/03/2026,Sekeloa-02080,Tidak terjual,1843 MUHAMMAD ALFAHRUL JANUAR RIZKI,991,g,11892,1843 MUHAMMAD ALFAHRUL JANUAR RIZKI,bonggol kol dan kol busuk,Selesai
+Bahan Baku,(r) kol,GN-RM-PRD-001,Dramaga,11/03/2026,Dramaga-00911,Kadaluarsa,899 ARIANA HERAWATI,1173,g,16422,899 ARIANA HERAWATI,-,Selesai
+Bahan Baku,(r) kol,GN-RM-PRD-001,IKPN Bintaro,11/03/2026,Bintaro-00338,Kadaluarsa,1558 RIVALDI ROMANSYAH,1600,g,22400,1933 RENDY FINKY PATTY,busuk ,Selesai
+Bahan Baku,(r) kol,GN-RM-PRD-001,Gerlong,11/03/2026,Gerlong-01115,Rusak,2140 ILHAM AENA SAPUTRA,1482,g,17784,335 GALIH SEPTENDI,rusak,Selesai
+Bahan Baku,(r) kol,GN-RM-PRD-001,Sekeloa,16/03/2026,Sekeloa-02095,Tidak terjual,1907 RULLY ANSHORI,167,g,2004,1843 MUHAMMAD ALFAHRUL JANUAR RIZKI,busuk,Selesai
+Bahan Baku,(r) kol,GN-RM-PRD-001,Gerlong,20/03/2026,Gerlong-01150,Rusak,1288 BAYU SUANDA,525,g,6300,1288 BAYU SUANDA,layu,Selesai
+Bahan Baku,(r) kol,GN-RM-PRD-001,Gerlong,23/03/2026,Gerlong-01159,Rusak,1288 BAYU SUANDA,800,g,9600,1288 BAYU SUANDA,-,Selesai
+Bahan Baku,(r) kol,GN-RM-PRD-001,Unjani,23/03/2026,Unjani-01868,Rusak,1308 SERUNI JANNAH,280,g,3360,1308 SERUNI JANNAH,-,Selesai
+Bahan Baku,(r) kol,GN-RM-PRD-001,Gerlong,25/03/2026,Gerlong-01171,Rusak,1288 BAYU SUANDA,900,g,10800,1288 BAYU SUANDA,-,Selesai
+Bahan Baku,(r) kol,GN-RM-PRD-001,Gerlong,28/03/2026,Gerlong-01182,Rusak,1288 BAYU SUANDA,1100,g,13200,1288 BAYU SUANDA,-,Selesai
+Bahan Baku,(r) kol,GN-RM-PRD-001,Metro Margahayu,29/03/2026,Metro-01584,Test Food / RM,346 DEDI ROHIMAT,850,g,10200,346 DEDI ROHIMAT,-,Selesai
+Bahan Baku,(r) kol,GN-RM-PRD-001,Gerlong,31/03/2026,Gerlong-01195,Tidak terjual,1288 BAYU SUANDA,1232,g,14784,1288 BAYU SUANDA,-,Selesai
+Bahan Baku,(r) kremesan,GN-RM-SBL-008,Unla,05/03/2026,Unla-00021,Training Trainer,963 REFI AULIA DEFIANA,60,g,2760,963 REFI AULIA DEFIANA,TRAINING UNLA KIDS MEAL,Selesai
+Bahan Baku,(r) kremesan,GN-RM-SBL-008,Uhamka,15/03/2026,UHAMKA-00261,Tidak terjual,1615 MILDA SITI NURAENI,2,g,92,1615 MILDA SITI NURAENI,void customer ,Selesai
+Bahan Baku,(r) kremesan,GN-RM-SBL-008,Ujung Berung,16/03/2026,UBER-01217,Tidak terjual,1266 ALYA PUTRI ZAHIRA,60,g,2760,1266 ALYA PUTRI ZAHIRA,cancel,Selesai
+Bahan Baku,(r) kremesan,GN-RM-SBL-008,Ujung Berung,18/03/2026,UBER-01238,Kadaluarsa,1813 EGIANSYAH,2,g,92,1813 EGIANSYAH,melebihi hding time,Selesai
+Bahan Baku,(r) kremesan,GN-RM-SBL-008,Dramaga,19/03/2026,Dramaga-00947,Tidak terjual,1543 MARINA,1,g,46,899 ARIANA HERAWATI,dibatalkan oleh driver,Selesai
+Bahan Baku,(r) kremesan,GN-RM-SBL-008,Ujung Berung,22/03/2026,UBER-01256,Tidak terjual,1813 EGIANSYAH,7,g,322,1813 EGIANSYAH,void,Selesai
+Bahan Baku,(r) kremesan,GN-RM-SBL-008,Ujung Berung,24/03/2026,UBER-01270,Tidak terjual,1266 ALYA PUTRI ZAHIRA,7,g,322,1266 ALYA PUTRI ZAHIRA,cancelan ,Selesai
+Bahan Baku,(r) kremesan,GN-RM-SBL-008,Ujung Berung,29/03/2026,UBER-01293,Tidak terjual,1813 EGIANSYAH,7,g,322,1813 EGIANSYAH,void,Selesai
+Bahan Baku,(r) kulit ayam,GN-RM-PRO-002,Uhamka,03/03/2026,UHAMKA-00236,Tidak terjual,1615 MILDA SITI NURAENI,500,g,19000,1615 MILDA SITI NURAENI,Waste Kulit crispy,Selesai
+Bahan Baku,(r) kulit ayam,GN-RM-PRO-002,Melong,21/03/2026,Melong-00855,Rusak,762 AHMAD FAUZAN,2000,g,68000,Kania Firdanisa,"bau tidak ada overhandle thawing shift malam ( ahmad ,fadli , adit )",Selesai
+Bahan Baku,(r) kulit ayam,GN-RM-PRO-002,Melong,26/03/2026,Melong-00874,Tidak terjual,762 AHMAD FAUZAN,960,g,32640,762 AHMAD FAUZAN,gosong ,Selesai
+Bahan Baku,(r) kulit ayam,GN-RM-PRO-002,Unisba,27/03/2026,Unisba-01221,Kadaluarsa,RM TAUFIK ARIFIN,1000,g,34000,RM TAUFIK ARIFIN,-,Selesai
+Bahan Baku,(r) kulit ayam crispy,BB-16416,Gerlong,03/03/2026,Gerlong-01082,Kadaluarsa,2002 CANDA AGUSTIANA,764,g,84040,2002 CANDA AGUSTIANA,holding time,Selesai
+Bahan Baku,(r) kulit ayam crispy,BB-16416,Kelapa Dua,07/03/2026,KLP2-00555,Tidak terjual,1242 DWINA RATU JOVITA,110,g,12100,1242 DWINA RATU JOVITA,waste cancel kelapa dua,Selesai
+Bahan Baku,(r) kulit ayam crispy,BB-16416,Maranatha,13/03/2026,Marnath-00586,Tidak terjual,1299 THEO BINTANG SYAHRIEL,336,g,36960,416 INDRA MAULANA,-,Selesai
+Bahan Baku,(r) kulit ayam crispy,BB-16416,Cihanjuang,21/03/2026,Cihanjuang-01323,Tidak terjual,1579 MOHAMAD RIFKY RAMDHANI,300,g,33000,1579 MOHAMAD RIFKY RAMDHANI,waste produk melebih batas holding time(tidak terjual),Selesai
+Bahan Baku,(r) kulit ayam crispy,BB-16416,Unisba,27/03/2026,Unisba-01222,Kadaluarsa,RM TAUFIK ARIFIN,1000,g,110000,RM TAUFIK ARIFIN,-,Selesai
+Bahan Baku,(r) lap microfiber,GN-RM-OPS-043,DC Crisbar Bandung,06/03/2026,dcC-00226,Penelitian & Pengembangan,Zenal,1,pcs,3300,Zenal,buat pel ruangan kerja dan keset,Selesai
+Bahan Baku,(r) lemon tea bubuk,CB-RM-DRY-003,DC Crisbar Bandung,17/03/2026,dcC-00230,Penelitian & Pengembangan,Irfan,2000,g,66000,Irfan,waste lemon tea untuk pengembangan,Selesai
+Bahan Baku,(r) maggie lezat,GN-RM-CON-003,IKPN Bintaro,03/03/2026,Bintaro-00291,Kadaluarsa,1105 MUHAMMAD KAHFI,241,g,10519.65,1933 RENDY FINKY PATTY,-,Selesai
+Bahan Baku,(r) maggie lezat,GN-RM-CON-003,Office Crisbar,12/03/2026,off-00005,Training Trainer,1774 MUHAMAD RIZALDI SULAEMAN,30,g,1309.5,1774 MUHAMAD RIZALDI SULAEMAN,kebutuhan training,Selesai
+Bahan Baku,(r) margarin,GN-RM-DAI-004,Office Crisbar,12/03/2026,off-00005,Training Trainer,1774 MUHAMAD RIZALDI SULAEMAN,100,g,1920,1774 MUHAMAD RIZALDI SULAEMAN,kebutuhan training,Selesai
+Bahan Baku,(r) minyak goreng,GN-RM-DRY-005,Office Crisbar,12/03/2026,off-00004,Training Trainer,1774 MUHAMAD RIZALDI SULAEMAN,24,l,457333.33,1774 MUHAMAD RIZALDI SULAEMAN,kebutuhan training,Selesai
+Bahan Baku,(r) sambal hijau,GN-RM-SBL-002,Dramaga,01/03/2026,Dramaga-00855,Kadaluarsa,1853 XENA ANGGALE LEWENUSSA ,86,g,7740,899 ARIANA HERAWATI,lewat holding time ,Selesai
+Bahan Baku,(r) sambal hijau,GN-RM-SBL-002,Ujung Berung,02/03/2026,UBER-01142,Kadaluarsa,1813 EGIANSYAH,236,g,21240,1813 EGIANSYAH,melebihi holding Time ,Selesai
+Bahan Baku,(r) sambal hijau,GN-RM-SBL-002,Gerlong,03/03/2026,Gerlong-01080,Kadaluarsa,2002 CANDA AGUSTIANA,190,g,17100,2002 CANDA AGUSTIANA,kedaluarsa ,Selesai
+Bahan Baku,(r) sambal hijau,GN-RM-SBL-002,UIN Bandung,04/03/2026,UINBDG-00580,Tidak terjual,1676 RIZKI RAMDHANI,225,g,20250,1525 SRI HAPPY DESTRIANA JELLAN,sudah melebihi holding time ,Selesai
+Bahan Baku,(r) sambal hijau,GN-RM-SBL-002,Taman Kopo Indah,05/03/2026,Kopo-01460,Kadaluarsa,2004 ZAKIAH DANIELAH,125,g,11250,2004 ZAKIAH DANIELAH,holding time mn,Selesai
+Bahan Baku,(r) sambal hijau,GN-RM-SBL-002,Gerlong,09/03/2026,Gerlong-01097,Kadaluarsa,2140 ILHAM AENA SAPUTRA,345,g,31050,335 GALIH SEPTENDI,kadaluarsa,Selesai
+Bahan Baku,(r) sambal hijau,GN-RM-SBL-002,Ujung Berung,10/03/2026,UBER-01171,Kadaluarsa,2248 YASIN HAKIM,284,g,25560,2248 YASIN HAKIM,sudah lebih dari holding time,Selesai
+Bahan Baku,(r) sambal hijau,GN-RM-SBL-002,Gerlong,12/03/2026,Gerlong-01122,Kadaluarsa,2002 CANDA AGUSTIANA,63,g,5670,2002 CANDA AGUSTIANA,holding time ,Selesai
+Bahan Baku,(r) sambal hijau,GN-RM-SBL-002,Dramaga,13/03/2026,Dramaga-00922,Kadaluarsa,2186 MUHAMAD RAKA FEBRIAWAN,110,g,9900,899 ARIANA HERAWATI,lewat holding time ,Selesai
+Bahan Baku,(r) sambal hijau,GN-RM-SBL-002,Ujung Berung,15/03/2026,UBER-01205,Kadaluarsa,1813 EGIANSYAH,168,g,15120,1813 EGIANSYAH,sudah melebihi holding time,Selesai
+Bahan Baku,(r) sambal hijau,GN-RM-SBL-002,Gerlong,16/03/2026,Gerlong-01134,Kadaluarsa,2002 CANDA AGUSTIANA,87,g,7830,2002 CANDA AGUSTIANA,holding time,Selesai
+Bahan Baku,(r) sambal hijau,GN-RM-SBL-002,Taman Kopo Indah,16/03/2026,Kopo-01516,Kadaluarsa,2004 ZAKIAH DANIELAH,190,g,17100,2004 ZAKIAH DANIELAH,holding time ,Selesai
+Bahan Baku,(r) sambal hijau,GN-RM-SBL-002,Gerlong,18/03/2026,Gerlong-01140,Kadaluarsa,2140 ILHAM AENA SAPUTRA,155,g,13950,1601 ASEP TRISNA,kadaluarsa,Selesai
+Bahan Baku,(r) sambal hijau,GN-RM-SBL-002,Jatinangor,18/03/2026,Jatinangor-00511,Kadaluarsa,Dian Heryani,200,g,18000,110 HERI KURNIAWAN,holdingtime subuh,Selesai
+Bahan Baku,(r) sambal hijau,GN-RM-SBL-002,Unjani,19/03/2026,Unjani-01849,Tidak terjual,529 NELLY LUTFIAH FITRIANI,30,g,2700,529 NELLY LUTFIAH FITRIANI,cancelll,Selesai
+Bahan Baku,(r) sambal hijau,GN-RM-SBL-002,Taman Kopo Indah,20/03/2026,Kopo-01535,Kadaluarsa,2004 ZAKIAH DANIELAH,154,g,13860,2004 ZAKIAH DANIELAH,holding time ,Selesai
+Bahan Baku,(r) sambal hijau,GN-RM-SBL-002,Sukapura,20/03/2026,Sukapura-02509,Kadaluarsa,1679 MUHAMAD HANAFI,95,g,8550,1679 MUHAMAD HANAFI,holding time,Selesai
+Bahan Baku,(r) sambal hijau,GN-RM-SBL-002,Ujung Berung,20/03/2026,UBER-01252,Tidak terjual,1266 ALYA PUTRI ZAHIRA,30,g,2700,1266 ALYA PUTRI ZAHIRA,cancel void,Selesai
+Bahan Baku,(r) sambal hijau,GN-RM-SBL-002,Unpam,26/03/2026,UNPAM-00807,Kadaluarsa,1807 RIZKY ALPIANSYAH RAMADHAN,353,g,31770,1807 RIZKY ALPIANSYAH RAMADHAN,"sambal madura,sambal matah,sambal bawang,sambal hijau, crisbee saus (Ade)",Selesai
+Bahan Baku,(r) sambal hijau,GN-RM-SBL-002,Gerlong,30/03/2026,Gerlong-01190,Kadaluarsa,2002 CANDA AGUSTIANA,280,g,25200,2002 CANDA AGUSTIANA,holding time,Selesai
+Bahan Baku,(r) sambal hitam madura,GN-RM-SBL-003,IKPN Bintaro,15/03/2026,Bintaro-00359,Penelitian & Pengembangan,1558 RIVALDI ROMANSYAH,30,g,2700,1933 RENDY FINKY PATTY,training lto,Selesai
+Bahan Baku,(r) sambal hitam madura,GN-RM-SBL-003,Unla,16/03/2026,Unla-00063,Training Trainer,963 REFI AULIA DEFIANA,30,g,2700,963 REFI AULIA DEFIANA,TRAINING MENU BARU UNLA,Selesai
+Bahan Baku,(r) sambal hitam madura,GN-RM-SBL-003,Jatinangor,18/03/2026,Jatinangor-00512,Kadaluarsa,Dian Heryani,356,g,32040,110 HERI KURNIAWAN,holdingtime,Selesai
+Bahan Baku,(r) sambal hitam madura,GN-RM-SBL-003,Unjani,01/03/2026,Unjani-01876,Rusak,1308 SERUNI JANNAH,780,g,70200,1308 SERUNI JANNAH,perbaikan west tgl 01/03,Selesai
+Bahan Baku,(r) sambal hitam madura,GN-RM-SBL-003,Unjani,01/03/2026,Unjani-01877,Rusak,1308 SERUNI JANNAH,780,g,70200,1308 SERUNI JANNAH,perbaikan west tgl 01/03,Selesai
+Bahan Baku,(r) sambal kaef sachet,GN-RM-SBL-004,Unpam,01/03/2026,UNPAM-00712,Tidak terjual,1807 RIZKY ALPIANSYAH RAMADHAN,4,pcs,702.33,1807 RIZKY ALPIANSYAH RAMADHAN,cancel driver gojek,Selesai
+Bahan Baku,(r) sambal kaef sachet,GN-RM-SBL-004,Unpam,06/03/2026,UNPAM-00727,Tidak terjual,1807 RIZKY ALPIANSYAH RAMADHAN,2,pcs,351.17,1807 RIZKY ALPIANSYAH RAMADHAN,cancel gojek,Selesai
+Bahan Baku,(r) sambal kaef sachet,GN-RM-SBL-004,Unpam,07/03/2026,UNPAM-00739,Tidak terjual,1807 RIZKY ALPIANSYAH RAMADHAN,1,pcs,175.58,1807 RIZKY ALPIANSYAH RAMADHAN,cancek gojek,Selesai
+Bahan Baku,(r) sambal kaef sachet,GN-RM-SBL-004,Widyatama,23/03/2026,Widyatama-01351,Penelitian & Pengembangan,1207 RIZKA AMELIA SUYONO,1,pcs,175.58,1207 RIZKA AMELIA SUYONO,tes food assessment cl widyatama 23/03,Selesai
+Bahan Baku,(r) sedotan hitam,GN-PK-UTL-001,Unisba,11/03/2026,Unisba-01180,Training Trainer,RM TAUFIK ARIFIN,2,pcs,72,RM TAUFIK ARIFIN,training kids meal,Selesai
+Bahan Baku,(r) sendok plastik bening,GN-PK-UTL-002,Trisakti,03/03/2026,Trisakti-01039,Tidak terjual,877 RAFFIADATUL KEMAL AT-THAARIQ,1,pcs,168.32,877 RAFFIADATUL KEMAL AT-THAARIQ,waste cancel gofood candra,Selesai
+Bahan Baku,(r) sendok plastik bening,GN-PK-UTL-002,Trisakti,03/03/2026,Trisakti-01047,Tidak terjual,877 RAFFIADATUL KEMAL AT-THAARIQ,2,pcs,336.64,877 RAFFIADATUL KEMAL AT-THAARIQ,waste cancel Grabfood ,Selesai
+Bahan Baku,(r) sendok plastik bening,GN-PK-UTL-002,Sukapura,26/03/2026,Sukapura-02530,Tidak terjual,1890 ANDRIAN,1,pcs,180,1890 ANDRIAN,cancel pelanggan ,Selesai
+Bahan Baku,(r) sirup lemon,BB-141,Melong,25/03/2026,Melong-00870,Kadaluarsa,1842 AFFIFAH,460,g,22917,1842 AFFIFAH,kadaluarsa,Selesai
+Bahan Baku,(r) telur ayam,GN-RM-PRO-005,Cihanjuang,01/03/2026,Cihanjuang-01261,Tidak terjual,1579 MOHAMAD RIFKY RAMDHANI,3,butir,5202,1579 MOHAMAD RIFKY RAMDHANI,waste telur tidak terjual,Selesai
+Bahan Baku,(r) telur ayam,GN-RM-PRO-005,Trisakti,01/03/2026,Trisakti-01026,Rusak,877 RAFFIADATUL KEMAL AT-THAARIQ,1,butir,1840,877 RAFFIADATUL KEMAL AT-THAARIQ,telur busuk dari suplier,Selesai
+Bahan Baku,(r) telur ayam,GN-RM-PRO-005,Widyatama,08/03/2026,Widyatama-01330,Rusak,1207 RIZKA AMELIA SUYONO,2,butir,3468,1207 RIZKA AMELIA SUYONO,"busuk, bau, tidak layak ",Selesai
+Bahan Baku,(r) telur ayam,GN-RM-PRO-005,IKPN Bintaro,10/03/2026,Bintaro-00333,Kesalahan,1558 RIVALDI ROMANSYAH,3,butir,5520,1933 RENDY FINKY PATTY,jatuh,Selesai
+Bahan Baku,(r) telur ayam,GN-RM-PRO-005,Cihanjuang,12/03/2026,Cihanjuang-01298,Tidak terjual,1579 MOHAMAD RIFKY RAMDHANI,2,butir,3468,1579 MOHAMAD RIFKY RAMDHANI,waste telur melebihi batas holding time ,Selesai
+Bahan Baku,(r) telur ayam,GN-RM-PRO-005,Office Crisbar,12/03/2026,off-00005,Training Trainer,1774 MUHAMAD RIZALDI SULAEMAN,3,butir,5400,1774 MUHAMAD RIZALDI SULAEMAN,kebutuhan training,Selesai
+Bahan Baku,(r) telur ayam,GN-RM-PRO-005,Antapani,12/03/2026,Antap-01087,Rusak,1456 MOCHAMAD INDRA MAULANA,6,butir,10404,1456 MOCHAMAD INDRA MAULANA,pecah ,Selesai
+Bahan Baku,(r) telur ayam,GN-RM-PRO-005,Ujung Berung,14/03/2026,UBER-01198,Training Trainer,432 INDAH SARI PRATIWI,1,butir,1734,432 INDAH SARI PRATIWI,training,Selesai
+Bahan Baku,(r) telur ayam,GN-RM-PRO-005,IKPN Bintaro,15/03/2026,Bintaro-00359,Penelitian & Pengembangan,1558 RIVALDI ROMANSYAH,2,butir,3680,1933 RENDY FINKY PATTY,training lto,Selesai
+Bahan Baku,(r) telur ayam,GN-RM-PRO-005,Melong,15/03/2026,Melong-00837,Tidak terjual,Kania Firdanisa,2,butir,3468,Kania Firdanisa,DI CANCEL,Selesai
+Bahan Baku,(r) telur ayam,GN-RM-PRO-005,Unjani,14/03/2026,Unjani-01834,Kesalahan,1094 MUHAMMAD ABDUL HAKIM RIDHO,1,butir,1734,1094 MUHAMMAD ABDUL HAKIM RIDHO,pecah,Selesai
+Bahan Baku,(r) telur ayam,GN-RM-PRO-005,Maranatha,17/03/2026,Marnath-00596,Training Trainer,416 INDRA MAULANA,1,butir,1734,416 INDRA MAULANA,training kids meal,Selesai
+Bahan Baku,(r) telur ayam,GN-RM-PRO-005,UIN Jakarta,22/03/2026,UINJKT-00859,Rusak,1780 ADITYA PRATAMA,4,butir,7360,1780 ADITYA PRATAMA,busuk,Selesai
+Bahan Baku,(r) telur ayam,GN-RM-PRO-005,Dramaga,23/03/2026,Dramaga-00989,Rusak,1524 ALDO RIFALDI,1,butir,1840,1524 ALDO RIFALDI,nasi lembek ,Selesai
+Bahan Baku,(r) telur ayam,GN-RM-PRO-005,Unjani,29/03/2026,Unjani-01885,Kesalahan,1094 MUHAMMAD ABDUL HAKIM RIDHO,2,butir,3468,1094 MUHAMMAD ABDUL HAKIM RIDHO,kesalahan pembuatan nasgor crew,Selesai
+Bahan Baku,(r) telur ayam,GN-RM-PRO-005,Uhamka,31/03/2026,UHAMKA-00291,Kadaluarsa,1615 MILDA SITI NURAENI,10,butir,18400,1615 MILDA SITI NURAENI,busukk,Selesai
+Bahan Baku,(r) telur ayam,GN-RM-PRO-005,Uhamka,31/03/2026,UHAMKA-00292,Kadaluarsa,1615 MILDA SITI NURAENI,10,butir,18400,1615 MILDA SITI NURAENI,busukk,Selesai
+Bahan Baku,(r) tepung regular fc-11,GN-RM-DRY-006,Sekeloa,14/03/2026,Sekeloa-02091,Tidak terjual,Lauhil99,13900,g,249949.8,Lauhil99,ampas tepung ,Selesai
+Bahan Baku,(r) tepung spicy 05,GN-RM-DRY-007,Office Crisbar,12/03/2026,off-00006,Training Trainer,1774 MUHAMAD RIZALDI SULAEMAN,75,g,2289.38,1774 MUHAMAD RIZALDI SULAEMAN,Kebutuhan training,Selesai
+Bahan Baku,(r) thai tea,CB-RM-DRY-004,Taman Kopo Indah,05/03/2026,Kopo-01461,Kadaluarsa,2004 ZAKIAH DANIELAH,25,g,3315.1,2004 ZAKIAH DANIELAH,-,Selesai
+Bahan Baku,(r) thai tea,CB-RM-DRY-004,UIN Jakarta,10/03/2026,UINJKT-00816,Kadaluarsa,1780 ADITYA PRATAMA,652,g,86457.81,1780 ADITYA PRATAMA,sudah melebihi shelf life ,Selesai
+Bahan Baku,(w) bumbu crisbar,CB-WP-CON-001,Trisakti,01/03/2026,Trisakti-01022,Tidak terjual,877 RAFFIADATUL KEMAL AT-THAARIQ,2650,g,71550,877 RAFFIADATUL KEMAL AT-THAARIQ,waste shift closing 8 maret,Selesai
+Bahan Baku,(w) bumbu crisbar,CB-WP-CON-001,Trisakti,01/03/2026,Trisakti-01025,Tidak terjual,877 RAFFIADATUL KEMAL AT-THAARIQ,3950,g,106650,877 RAFFIADATUL KEMAL AT-THAARIQ,waste shift closing 1 maret,Selesai
+Bahan Baku,(w) bumbu crisbar,CB-WP-CON-001,Cihanjuang,03/03/2026,Cihanjuang-01272,Tidak terjual,1579 MOHAMAD RIFKY RAMDHANI,1380,g,37260,1579 MOHAMAD RIFKY RAMDHANI,waste bumbu crisbar melebihi batas holding time ,Selesai
+Bahan Baku,(w) bumbu crisbar,CB-WP-CON-001,Trisakti,03/03/2026,Trisakti-01033,Tidak terjual,877 RAFFIADATUL KEMAL AT-THAARIQ,3700,g,99900,877 RAFFIADATUL KEMAL AT-THAARIQ,waste shift closing 3 maret,Selesai
+Bahan Baku,(w) bumbu crisbar,CB-WP-CON-001,Trisakti,04/03/2026,Trisakti-01054,Tidak terjual,877 RAFFIADATUL KEMAL AT-THAARIQ,5350,g,144450,877 RAFFIADATUL KEMAL AT-THAARIQ,waste shift closing 4 maret,Selesai
+Bahan Baku,(w) bumbu crisbar,CB-WP-CON-001,Trisakti,07/03/2026,Trisakti-01075,Tidak terjual,877 RAFFIADATUL KEMAL AT-THAARIQ,3450,g,93150,877 RAFFIADATUL KEMAL AT-THAARIQ,waste shift closing ,Selesai
+Bahan Baku,(w) bumbu crisbar,CB-WP-CON-001,Trisakti,07/03/2026,Trisakti-01080,Tidak terjual,877 RAFFIADATUL KEMAL AT-THAARIQ,1993,g,53811,877 RAFFIADATUL KEMAL AT-THAARIQ,Waste shift closing 7 maret,Selesai
+Bahan Baku,(w) bumbu crisbar,CB-WP-CON-001,Trisakti,08/03/2026,Trisakti-01085,Tidak terjual,877 RAFFIADATUL KEMAL AT-THAARIQ,1351,g,36477,877 RAFFIADATUL KEMAL AT-THAARIQ,waste shift closing 8 Maret ,Selesai
+Bahan Baku,(w) bumbu crisbar,CB-WP-CON-001,Trisakti,09/03/2026,Trisakti-01093,Tidak terjual,877 RAFFIADATUL KEMAL AT-THAARIQ,1564,g,42228,877 RAFFIADATUL KEMAL AT-THAARIQ,waste shift closing 9 maret ,Selesai
+Bahan Baku,(w) bumbu crisbar,CB-WP-CON-001,Melong,10/03/2026,Melong-00827,Kadaluarsa,Kania Firdanisa,2140,g,57780,Kania Firdanisa,lebih holding tjme,Selesai
+Bahan Baku,(w) bumbu crisbar,CB-WP-CON-001,Maranatha,11/03/2026,Marnath-00582,Tidak terjual,1509 SEPTIA DWI ERLANGGA,601,g,16227,1509 SEPTIA DWI ERLANGGA,tidak terjual,Selesai
+Bahan Baku,(w) bumbu crisbar,CB-WP-CON-001,Trisakti,11/03/2026,Trisakti-01105,Tidak terjual,877 RAFFIADATUL KEMAL AT-THAARIQ,2075,g,56025,877 RAFFIADATUL KEMAL AT-THAARIQ,waste shift closing 11 maret,Selesai
+Bahan Baku,(w) bumbu crisbar,CB-WP-CON-001,Melong,12/03/2026,Melong-00833,Kadaluarsa,762 AHMAD FAUZAN,1620,g,43740,762 AHMAD FAUZAN,sudah lewat holding,Selesai
+Bahan Baku,(w) bumbu crisbar,CB-WP-CON-001,Trisakti,13/03/2026,Trisakti-01116,Tidak terjual,877 RAFFIADATUL KEMAL AT-THAARIQ,3700,g,99900,877 RAFFIADATUL KEMAL AT-THAARIQ,waste shift closing 13 Maret ,Selesai
+Bahan Baku,(w) bumbu crisbar,CB-WP-CON-001,Trisakti,14/03/2026,Trisakti-01129,Tidak terjual,877 RAFFIADATUL KEMAL AT-THAARIQ,3350,g,90450,877 RAFFIADATUL KEMAL AT-THAARIQ,waste closingan,Selesai
+Bahan Baku,(w) bumbu crisbar,CB-WP-CON-001,Trisakti,15/03/2026,Trisakti-01135,Tidak terjual,877 RAFFIADATUL KEMAL AT-THAARIQ,3900,g,105300,877 RAFFIADATUL KEMAL AT-THAARIQ,Waste shift closing 15 Maret ,Selesai
+Bahan Baku,(w) bumbu crisbar,CB-WP-CON-001,Trisakti,16/03/2026,Trisakti-01140,Tidak terjual,877 RAFFIADATUL KEMAL AT-THAARIQ,1750,g,47250,877 RAFFIADATUL KEMAL AT-THAARIQ,waste shift closing 16 Maret ,Selesai
+Bahan Baku,(w) bumbu crisbar,CB-WP-CON-001,Trisakti,18/03/2026,Trisakti-01143,Tidak terjual,877 RAFFIADATUL KEMAL AT-THAARIQ,3300,g,89100,877 RAFFIADATUL KEMAL AT-THAARIQ,waste shift closing 17 maret,Selesai
+Bahan Baku,(w) bumbu crisbar,CB-WP-CON-001,Trisakti,19/03/2026,Trisakti-01150,Tidak terjual,877 RAFFIADATUL KEMAL AT-THAARIQ,2550,g,68850,877 RAFFIADATUL KEMAL AT-THAARIQ,waste closing 18 maret,Selesai
+Bahan Baku,(w) bumbu crisbar,CB-WP-CON-001,Trisakti,19/03/2026,Trisakti-01154,Tidak terjual,877 RAFFIADATUL KEMAL AT-THAARIQ,2500,g,67500,877 RAFFIADATUL KEMAL AT-THAARIQ,waste shift closing 19 Maret ,Selesai
+Bahan Baku,(w) bumbu crisbar,CB-WP-CON-001,Cihanjuang,21/03/2026,Cihanjuang-01323,Tidak terjual,1579 MOHAMAD RIFKY RAMDHANI,2000,g,54000,1579 MOHAMAD RIFKY RAMDHANI,waste produk melebih batas holding time(tidak terjual),Selesai
+Bahan Baku,(w) bumbu crisbar,CB-WP-CON-001,Gerlong,21/03/2026,Gerlong-01154,Tidak terjual,335 GALIH SEPTENDI,2085,g,56295,335 GALIH SEPTENDI,closing ,Selesai
+Bahan Baku,(w) bumbu crisbar,CB-WP-CON-001,Trisakti,20/03/2026,Trisakti-01156,Tidak terjual,877 RAFFIADATUL KEMAL AT-THAARIQ,2900,g,78300,877 RAFFIADATUL KEMAL AT-THAARIQ,Waste shift closing 20 maret,Selesai
+Bahan Baku,(w) bumbu crisbar,CB-WP-CON-001,Trisakti,22/03/2026,Trisakti-01161,Tidak terjual,877 RAFFIADATUL KEMAL AT-THAARIQ,3700,g,99900,877 RAFFIADATUL KEMAL AT-THAARIQ,waste closing 21 maret,Selesai
+Bahan Baku,(w) bumbu crisbar,CB-WP-CON-001,Trisakti,24/03/2026,Trisakti-01167,Tidak terjual,877 RAFFIADATUL KEMAL AT-THAARIQ,2450,g,66150,877 RAFFIADATUL KEMAL AT-THAARIQ,waste shift closing 24 maret,Selesai
+Bahan Baku,(w) bumbu crisbar,CB-WP-CON-001,Trisakti,26/03/2026,Trisakti-01170,Tidak terjual,877 RAFFIADATUL KEMAL AT-THAARIQ,2650,g,71550,877 RAFFIADATUL KEMAL AT-THAARIQ,waste shift closing 25 maret,Selesai
+Bahan Baku,(w) bumbu crisbar,CB-WP-CON-001,Trisakti,27/03/2026,Trisakti-01179,Tidak terjual,877 RAFFIADATUL KEMAL AT-THAARIQ,4200,g,113400,877 RAFFIADATUL KEMAL AT-THAARIQ,waste shift closing 27 maret,Selesai
+Bahan Baku,(w) bumbu crisbar,CB-WP-CON-001,Trisakti,28/03/2026,Trisakti-01191,Tidak terjual,877 RAFFIADATUL KEMAL AT-THAARIQ,3100,g,83700,877 RAFFIADATUL KEMAL AT-THAARIQ,waste shift closing 28 maret,Selesai
+Bahan Baku,(w) bumbu crisbar,CB-WP-CON-001,Trisakti,30/03/2026,Trisakti-01197,Tidak terjual,877 RAFFIADATUL KEMAL AT-THAARIQ,3450,g,93150,877 RAFFIADATUL KEMAL AT-THAARIQ,waste shift closing 29 maret,Selesai
+Bahan Baku,(w) bumbu crisbee,CB-WP-CON-002,Antapani,10/03/2026,Antap-01072,Rusak,1909 CICI FEBRIYANTI,1,g,39,1909 CICI FEBRIYANTI,terkontaminasi ,Selesai
+Bahan Baku,(w) bumbu terong,GN-WP-CON-002,Unla,05/03/2026,Unla-00015,Kadaluarsa,963 REFI AULIA DEFIANA,118,ml,N/A,963 REFI AULIA DEFIANA,melebihi holding time ,Selesai
+Bahan Baku,(w) bumbu terong,GN-WP-CON-002,Dramaga,11/03/2026,Dramaga-00909,Kadaluarsa,1853 XENA ANGGALE LEWENUSSA ,155,ml,N/A,899 ARIANA HERAWATI,lewat holding time ,Selesai
+Bahan Baku,(w) bumbu terong,GN-WP-CON-002,Dramaga,11/03/2026,Dramaga-00910,Kadaluarsa,1853 XENA ANGGALE LEWENUSSA ,155,ml,N/A,899 ARIANA HERAWATI,lewat holding time ,Selesai
+Bahan Baku,(w) bumbu terong,GN-WP-CON-002,Jatinangor,15/03/2026,Jatinangor-00493,Tidak terjual,435 KHOERUL HAMID,150,ml,N/A,435 KHOERUL HAMID,-,Selesai
+Bahan Baku,(w) pasta garlic,GN-WP-DAI-001,Sukapura,01/03/2026,Sukapura-02526,Rusak,Tian,285,g,12968.25,Tian,revisi tanggal 1 maret 2026,Selesai
+Bahan Baku,(w) premix bulgogi,GN-WP-CON-003,UIN Jakarta,04/03/2026,UINJKT-00793,Kadaluarsa,1780 ADITYA PRATAMA,209,g,8569,1780 ADITYA PRATAMA,sudah melebihi shelf life ,Selesai
+Bahan Baku,(w) premix bulgogi,GN-WP-CON-003,Sukapura,08/03/2026,Sukapura-02435,Rusak,1073 BERLIANA AMELIA PUTRI,480,g,19680,1073 BERLIANA AMELIA PUTRI,mengering ,Selesai
+Bahan Baku,(w) premix bulgogi,GN-WP-CON-003,Taman Kopo Indah,09/03/2026,Kopo-01485,Kadaluarsa,1410 FIQRI FAUZIA ARDIANSYAH,389,g,15949,1410 FIQRI FAUZIA ARDIANSYAH,kadaluwarsa,Selesai
+Bahan Baku,(w) premix bulgogi,GN-WP-CON-003,IKPN Bintaro,13/03/2026,Bintaro-00348,Tidak terjual,1933 RENDY FINKY PATTY,268,g,10988,1933 RENDY FINKY PATTY,waste tidak terjual,Selesai
+Bahan Baku,(w) premix bulgogi,GN-WP-CON-003,Ujung Berung,14/03/2026,UBER-01198,Training Trainer,432 INDAH SARI PRATIWI,60,g,2460,432 INDAH SARI PRATIWI,training,Selesai
+Bahan Baku,(w) premix bulgogi,GN-WP-CON-003,Widyatama,15/03/2026,Widyatama-01340,Penelitian & Pengembangan,1207 RIZKA AMELIA SUYONO,25,g,1025,1207 RIZKA AMELIA SUYONO,Training Kids Meal Widyatama ,Selesai
+Bahan Baku,(w) premix bulgogi,GN-WP-CON-003,UIN Jakarta,21/03/2026,UINJKT-00856,Kadaluarsa,1780 ADITYA PRATAMA,385,g,15785,1780 ADITYA PRATAMA,-,Selesai
+Bahan Baku,(w) premix bulgogi,GN-WP-CON-003,Dramaga,21/03/2026,Dramaga-00964,Kadaluarsa,1542 MUHAMMAD RAIHAN SURYANA,125,g,5125,1542 MUHAMMAD RAIHAN SURYANA,lewat holding time,Selesai
+Bahan Baku,(w) premix bulgogi,GN-WP-CON-003,Gerlong,21/03/2026,Gerlong-01155,Tidak terjual,335 GALIH SEPTENDI,355,g,14555,335 GALIH SEPTENDI,closing order,Selesai
+Bahan Baku,(w) premix bulgogi,GN-WP-CON-003,Unjani,23/03/2026,Unjani-01865,Kadaluarsa,1308 SERUNI JANNAH,418,g,17138,1308 SERUNI JANNAH,-,Selesai
+Bahan Baku,(w) premix bulgogi,GN-WP-CON-003,UIN Jakarta,30/03/2026,UINJKT-00888,Kadaluarsa,1780 ADITYA PRATAMA,300,g,12300,1780 ADITYA PRATAMA,melebihi shelf life dan waste batang jamur ,Selesai
+Bahan Baku,(w) premix nashville,GN-WP-CON-004,UIN Jakarta,01/03/2026,UINJKT-00780,Kadaluarsa,1780 ADITYA PRATAMA,424,g,19928,1780 ADITYA PRATAMA,-,Selesai
+Bahan Baku,(w) premix nashville,GN-WP-CON-004,Taman Kopo Indah,02/03/2026,Kopo-01451,Tidak terjual,1437 ISMA NENENG NURLIAN,1383,g,N/A,1437 ISMA NENENG NURLIAN,sudah lewat holding time,Batal
+Bahan Baku,(w) premix nashville,GN-WP-CON-004,Taman Kopo Indah,03/03/2026,Kopo-01452,Tidak terjual,1437 ISMA NENENG NURLIAN,138,g,6486,1437 ISMA NENENG NURLIAN,revisi,Selesai
+Bahan Baku,(w) premix nashville,GN-WP-CON-004,Taman Kopo Indah,07/03/2026,Kopo-01472,Tidak terjual,1437 ISMA NENENG NURLIAN,308,g,14476,1437 ISMA NENENG NURLIAN,menggumpal tidak ada minyak nya,Selesai
+Bahan Baku,(w) premix nashville,GN-WP-CON-004,IKPN Bintaro,08/03/2026,Bintaro-00327,Kadaluarsa,1558 RIVALDI ROMANSYAH,359,g,16873,1558 RIVALDI ROMANSYAH,Tidak terjual,Selesai
+Bahan Baku,(w) premix nashville,GN-WP-CON-004,Gerlong,09/03/2026,Gerlong-01100,Rusak,2140 ILHAM AENA SAPUTRA,305,g,14335,335 GALIH SEPTENDI,rusak,Selesai
+Bahan Baku,(w) premix nashville,GN-WP-CON-004,Taman Kopo Indah,10/03/2026,Kopo-01486,Kadaluarsa,1410 FIQRI FAUZIA ARDIANSYAH,394,g,18518,1410 FIQRI FAUZIA ARDIANSYAH,holding time,Selesai
+Bahan Baku,(w) premix nashville,GN-WP-CON-004,Dramaga,21/03/2026,Dramaga-00964,Kadaluarsa,1542 MUHAMMAD RAIHAN SURYANA,132,g,6204,1542 MUHAMMAD RAIHAN SURYANA,lewat holding time,Selesai
+Bahan Baku,(w) premix nashville,GN-WP-CON-004,Gerlong,21/03/2026,Gerlong-01155,Tidak terjual,335 GALIH SEPTENDI,356,g,16732,335 GALIH SEPTENDI,closing order,Selesai
+Bahan Baku,(w) sambal bawang,GN-WP-SBL-001,CK Crisbar Bandung,02/03/2026,ckC-00195,Penelitian & Pengembangan,Rina,7,pcs,5187,Rina,trial capsicum,Selesai
+Bahan Baku,(w) sambal bawang,GN-WP-SBL-001,CK Crisbar Bandung,04/03/2026,ckC-00200,Penelitian & Pengembangan,Zaki,10,pcs,7410,Zaki,waste sample tgl 3&4 10 pcs,Selesai
+Bahan Baku,(w) sambal bawang,GN-WP-SBL-001,CK Crisbar Bandung,05/03/2026,ckC-00204,Penelitian & Pengembangan,Zaki,5,pcs,3705,Zaki,sample tgl 5/3/26,Selesai
+Bahan Baku,(w) sambal bawang,GN-WP-SBL-001,Sekeloa,07/03/2026,Sekeloa-02067,Kesalahan,1846 HANUN MAYASA,5,pcs,3705,1843 MUHAMMAD ALFAHRUL JANUAR RIZKI,handle complaint ,Selesai
+Bahan Baku,(w) sambal bawang,GN-WP-SBL-001,CK Crisbar Bandung,10/03/2026,ckC-00210,Penelitian & Pengembangan,Zaki,60,pcs,44460,Zaki,Bu aziefah 50 pcs tgl 9/3/26 Bu Mita tgl 9&10 : 10 pcs,Selesai
+Bahan Baku,(w) sambal bawang,GN-WP-SBL-001,CK Crisbar Bandung,12/03/2026,ckC-00214,Penelitian & Pengembangan,Zaki,8,pcs,5928,Zaki,waste sample tgl 11&12,Selesai
+Bahan Baku,(w) sambal bawang,GN-WP-SBL-001,Unjani,12/03/2026,Unjani-01814,Test Food / RM,529 NELLY LUTFIAH FITRIANI,1,pcs,741,529 NELLY LUTFIAH FITRIANI,test food RM with crew,Selesai
+Bahan Baku,(w) sambal bawang,GN-WP-SBL-001,Dramaga,13/03/2026,Dramaga-00925,Test Food / RM,899 ARIANA HERAWATI,1,pcs,741,899 ARIANA HERAWATI,-,Selesai
+Bahan Baku,(w) sambal bawang,GN-WP-SBL-001,CK Crisbar Bandung,13/03/2026,ckC-00218,Penelitian & Pengembangan,Zaki,5,pcs,3705,Zaki,sampel rnd tgl 13/3/26,Selesai
+Bahan Baku,(w) sambal bawang,GN-WP-SBL-001,Maranatha,14/03/2026,Marnath-00588,Test Food / RM,416 INDRA MAULANA,1,pcs,741,416 INDRA MAULANA,testfood ,Selesai
+Bahan Baku,(w) sambal bawang,GN-WP-SBL-001,Unjani,12/03/2026,Unjani-01823,Test Food / RM,529 NELLY LUTFIAH FITRIANI,1,pcs,741,529 NELLY LUTFIAH FITRIANI,"revisi waste tgl 12,test food RM with crew",Selesai
+Bahan Baku,(w) sambal bawang,GN-WP-SBL-001,Unla,16/03/2026,Unla-00062,Training Trainer,1619 DWI YUDHA PANGESTU,4,pcs,2964,963 REFI AULIA DEFIANA,nampan cust tumpah licin ( training nampan),Selesai
+Bahan Baku,(w) sambal bawang,GN-WP-SBL-001,CK Crisbar Bandung,14/03/2026,ckC-00223,Penelitian & Pengembangan,Zaki,5,pcs,3705,Zaki,sampel rnd tgl 14/3/26,Selesai
+Bahan Baku,(w) sambal bawang,GN-WP-SBL-001,CK Crisbar Bandung,16/03/2026,ckC-00224,Penelitian & Pengembangan,Zaki,5,pcs,3705,Zaki,sampel rnd tgl 16/3/26,Selesai
+Bahan Baku,(w) sambal bawang,GN-WP-SBL-001,CK Crisbar Bandung,18/03/2026,ckC-00228,Penelitian & Pengembangan,Zaki,10,pcs,7410,Zaki,sampel rnd tgl 17 : 5 pcs tgl 18 : 5 pcs,Selesai
+Bahan Baku,(w) sambal bawang,GN-WP-SBL-001,Dramaga,19/03/2026,Dramaga-00946,Kadaluarsa,899 ARIANA HERAWATI,88,pcs,65208,899 ARIANA HERAWATI,"lewat holding time, penyebab raihan suryana, aldo, ilham ",Selesai
+Bahan Baku,(w) sambal bawang,GN-WP-SBL-001,Unjani,19/03/2026,Unjani-01850,Tidak terjual,529 NELLY LUTFIAH FITRIANI,5,pcs,3705,529 NELLY LUTFIAH FITRIANI,cancel,Selesai
+Bahan Baku,(w) sambal bawang,GN-WP-SBL-001,CK Crisbar Bandung,19/03/2026,ckC-00233,Penelitian & Pengembangan,Zaki,5,pcs,3705,Zaki,sampel rnd tgl 19/3/26,Selesai
+Bahan Baku,(w) sambal bawang,GN-WP-SBL-001,UIN Jakarta,20/03/2026,UINJKT-00855,Test Food / RM,1780 ADITYA PRATAMA,1,pcs,741,1780 ADITYA PRATAMA,-,Selesai
+Bahan Baku,(w) sambal bawang,GN-WP-SBL-001,Dramaga,21/03/2026,Dramaga-00954,Tidak terjual,1542 MUHAMMAD RAIHAN SURYANA,1,pcs,741,1542 MUHAMMAD RAIHAN SURYANA,cancel gojek,Selesai
+Bahan Baku,(w) sambal bawang,GN-WP-SBL-001,Dramaga,21/03/2026,Dramaga-00955,Tidak terjual,1542 MUHAMMAD RAIHAN SURYANA,1,pcs,741,1542 MUHAMMAD RAIHAN SURYANA,cancel gojek,Selesai
+Bahan Baku,(w) sambal bawang,GN-WP-SBL-001,Dramaga,21/03/2026,Dramaga-00957,Tidak terjual,1542 MUHAMMAD RAIHAN SURYANA,2,pcs,1482,1542 MUHAMMAD RAIHAN SURYANA,cancel grab,Selesai
+Bahan Baku,(w) sambal bawang,GN-WP-SBL-001,Dramaga,21/03/2026,Dramaga-00958,Tidak terjual,1542 MUHAMMAD RAIHAN SURYANA,2,pcs,1482,1542 MUHAMMAD RAIHAN SURYANA,cancel grab,Selesai
+Bahan Baku,(w) sambal bawang,GN-WP-SBL-001,Unla,21/03/2026,Unla-00080,Test Food / RM,963 REFI AULIA DEFIANA,1,pcs,741,963 REFI AULIA DEFIANA,testfood RM,Selesai
+Bahan Baku,(w) sambal bawang,GN-WP-SBL-001,Dramaga,22/03/2026,Dramaga-00968,Tidak terjual,1542 MUHAMMAD RAIHAN SURYANA,2,pcs,1482,1542 MUHAMMAD RAIHAN SURYANA,cancel gojek,Selesai
+Bahan Baku,(w) sambal bawang,GN-WP-SBL-001,Dramaga,22/03/2026,Dramaga-00970,Tidak terjual,1542 MUHAMMAD RAIHAN SURYANA,1,pcs,741,1542 MUHAMMAD RAIHAN SURYANA,cancel gojek,Selesai
+Bahan Baku,(w) sambal bawang,GN-WP-SBL-001,Dramaga,22/03/2026,Dramaga-00973,Tidak terjual,1542 MUHAMMAD RAIHAN SURYANA,2,pcs,1482,1542 MUHAMMAD RAIHAN SURYANA,cancel gojek,Selesai
+Bahan Baku,(w) sambal bawang,GN-WP-SBL-001,Dramaga,23/03/2026,Dramaga-00980,Tidak terjual,1542 MUHAMMAD RAIHAN SURYANA,4,pcs,2964,1542 MUHAMMAD RAIHAN SURYANA,cancel gojek,Selesai
+Bahan Baku,(w) sambal bawang,GN-WP-SBL-001,Dramaga,23/03/2026,Dramaga-00983,Tidak terjual,1542 MUHAMMAD RAIHAN SURYANA,1,pcs,741,1542 MUHAMMAD RAIHAN SURYANA,cancel gojek,Selesai
+Bahan Baku,(w) sambal bawang,GN-WP-SBL-001,Dramaga,23/03/2026,Dramaga-00984,Tidak terjual,1542 MUHAMMAD RAIHAN SURYANA,1,pcs,741,1542 MUHAMMAD RAIHAN SURYANA,cancel gojek,Selesai
+Bahan Baku,(w) sambal bawang,GN-WP-SBL-001,Dramaga,23/03/2026,Dramaga-00985,Tidak terjual,1542 MUHAMMAD RAIHAN SURYANA,1,pcs,741,1542 MUHAMMAD RAIHAN SURYANA,cancel gojek,Selesai
+Bahan Baku,(w) sambal bawang,GN-WP-SBL-001,Dramaga,23/03/2026,Dramaga-00986,Tidak terjual,1542 MUHAMMAD RAIHAN SURYANA,1,pcs,741,1542 MUHAMMAD RAIHAN SURYANA,cancel gojek,Selesai
+Bahan Baku,(w) sambal bawang,GN-WP-SBL-001,Dramaga,23/03/2026,Dramaga-00987,Tidak terjual,1542 MUHAMMAD RAIHAN SURYANA,1,pcs,741,1542 MUHAMMAD RAIHAN SURYANA,cancel gojek,Selesai
+Bahan Baku,(w) sambal bawang,GN-WP-SBL-001,Dramaga,24/03/2026,Dramaga-00998,Tidak terjual,1542 MUHAMMAD RAIHAN SURYANA,1,pcs,741,1542 MUHAMMAD RAIHAN SURYANA,cancel gojek,Selesai
+Bahan Baku,(w) sambal bawang,GN-WP-SBL-001,Uhamka,25/03/2026,UHAMKA-00270,Kadaluarsa,1615 MILDA SITI NURAENI,363,pcs,268983,1615 MILDA SITI NURAENI,sudah melewati Batas Expired,Selesai
+Bahan Baku,(w) sambal bawang,GN-WP-SBL-001,Dramaga,25/03/2026,Dramaga-01005,Test Food / RM,899 ARIANA HERAWATI,1,pcs,741,899 ARIANA HERAWATI,testfood rsr rm,Selesai
+Bahan Baku,(w) sambal bawang,GN-WP-SBL-001,Uhamka,07/03/2026,UHAMKA-00276,Rusak,1615 MILDA SITI NURAENI,10,pcs,7410,1615 MILDA SITI NURAENI,revisi waste uhamka 00248,Selesai
+Bahan Baku,(w) sambal bawang,GN-WP-SBL-001,CK Crisbar Bandung,26/03/2026,ckC-00239,Penelitian & Pengembangan,Zaki,15,pcs,11115,Zaki,"sampel rnd tgl 20,25,26 : 15",Selesai
+Bahan Baku,(w) sambal bawang,GN-WP-SBL-001,CK Crisbar Bandung,27/03/2026,ckC-00243,Penelitian & Pengembangan,Zaki,5,pcs,3705,Zaki,sampel rnd tgl 27/3/26,Selesai
+Bahan Baku,(w) sambal bawang,GN-WP-SBL-001,Dramaga,28/03/2026,Dramaga-01018,Test Food / RM,899 ARIANA HERAWATI,1,pcs,741,899 ARIANA HERAWATI,testfood rsr rm,Selesai
+Bahan Baku,(w) sambal bawang,GN-WP-SBL-001,CK Crisbar Bandung,28/03/2026,ckC-00244,Penelitian & Pengembangan,Zaki,5,pcs,3705,Zaki,sampel rnd tgl 28/3/26,Selesai
+Bahan Baku,(w) sambal bawang,GN-WP-SBL-001,Dramaga,29/03/2026,Dramaga-01023,Test Food / RM,899 ARIANA HERAWATI,1,pcs,741,899 ARIANA HERAWATI,-,Selesai
+Bahan Baku,(w) sambal bawang,GN-WP-SBL-001,Metro Margahayu,29/03/2026,Metro-01583,Tidak terjual,346 DEDI ROHIMAT,1,pcs,741,346 DEDI ROHIMAT,cancel order ,Selesai
+Bahan Baku,(w) sambal bawang,GN-WP-SBL-001,Maranatha,30/03/2026,Marnath-00612,Test Food / RM,416 INDRA MAULANA,1,pcs,741,416 INDRA MAULANA,testfood RM ,Selesai
+Bahan Baku,(w) sambal bawang,GN-WP-SBL-001,Unla,30/03/2026,Unla-00107,Test Food / RM,963 REFI AULIA DEFIANA,1,pcs,741,963 REFI AULIA DEFIANA,testfood rm,Selesai
+Bahan Baku,(w) sambal bawang,GN-WP-SBL-001,CK Crisbar Bandung,30/03/2026,ckC-00247,Penelitian & Pengembangan,Zaki,4,pcs,2964,Zaki,sampel rnd tgl 30/3/26,Selesai
+Bahan Baku,(w) sambal bawang,GN-WP-SBL-001,Taman Kopo Indah,31/03/2026,Kopo-01573,Kadaluarsa,1410 FIQRI FAUZIA ARDIANSYAH,46,pcs,34086,1410 FIQRI FAUZIA ARDIANSYAH,kadaluarsa,Selesai
+Bahan Baku,(w) sambal bawang,GN-WP-SBL-001,CK Crisbar Bandung,31/03/2026,ckC-00250,Penelitian & Pengembangan,Zaki,65,pcs,48165,Zaki,sampel rnd tgl ,Selesai
+Bahan Baku,(w) sambal matah,GN-WP-SBL-002,Ujung Berung,05/03/2026,UBER-01150,Kadaluarsa,2488 FAKHRI FAUZAN PRATAMA,167,g,7014,1813 EGIANSYAH,sudah melebihi holding Time/basi,Selesai
+Bahan Baku,(w) sambal matah,GN-WP-SBL-002,Ujung Berung,13/03/2026,UBER-01189,Kadaluarsa,1813 EGIANSYAH,91,g,3822,1813 EGIANSYAH,melebihi holding Time ,Selesai
+Bahan Baku,(w) sambal matah,GN-WP-SBL-002,Mercubuana,22/03/2026,Mercu-01179,Tidak terjual,1262 BUNGA RAHAYU,112,g,4704,1262 BUNGA RAHAYU,"waste sambal matah, greentea, sweet ice tea (cancel dan melebihi batas holding time)",Selesai
+Bahan Baku,(w) sambal matah,GN-WP-SBL-002,UIN Jakarta,30/03/2026,UINJKT-00888,Kadaluarsa,1780 ADITYA PRATAMA,319,g,13398,1780 ADITYA PRATAMA,melebihi shelf life dan waste batang jamur ,Selesai
+Bahan Baku,(w) sambal matah,GN-WP-SBL-002,Metro Margahayu,30/03/2026,Metro-01586,Tidak terjual,346 DEDI ROHIMAT,221,g,9282,346 DEDI ROHIMAT,lewat holding time ,Selesai
+Bahan Baku,(w) saos gochujang ayam,GN-WP-CON-006,UIN Jakarta,21/03/2026,UINJKT-00856,Kadaluarsa,1780 ADITYA PRATAMA,158,ml,5688,1780 ADITYA PRATAMA,-,Selesai
+Bahan Baku,(w) tepung premix ayam kremes,GN-WP-DRY-001,IKPN Bintaro,01/03/2026,Bintaro-00283,Training Trainer,1558 RIVALDI ROMANSYAH,60,g,1080,1933 RENDY FINKY PATTY,Training kids meal,Selesai
+Bahan Baku,(w) tepung premix ayam kremes,GN-WP-DRY-001,Unla,04/03/2026,unl-00008,Training Trainer,963 REFI AULIA DEFIANA,100,g,1800,963 REFI AULIA DEFIANA,Training produk kids meal,Selesai
+Bahan Baku,(w) tepung premix ayam kremes,GN-WP-DRY-001,Unla,05/03/2026,Unla-00021,Training Trainer,963 REFI AULIA DEFIANA,50,g,900,963 REFI AULIA DEFIANA,TRAINING UNLA KIDS MEAL,Selesai
+Bahan Baku,(w) tepung premix ayam kremes,GN-WP-DRY-001,Ujung Berung,14/03/2026,UBER-01198,Training Trainer,432 INDAH SARI PRATIWI,90,g,1620,432 INDAH SARI PRATIWI,training,Selesai
+Bahan Baku,(w) tepung premix ayam kremes,GN-WP-DRY-001,IKPN Bintaro,28/03/2026,Bintaro-00424,Test Food / RM,1558 RIVALDI ROMANSYAH,20,g,360,1558 RIVALDI ROMANSYAH,rst + training,Selesai
+Tidak Berkategori,[ ] Box Combo JBC,BoxJb1,Unpam,01/03/2026,UNPAM-00716,Tidak terjual,1807 RIZKY ALPIANSYAH RAMADHAN,1,pcs,N/A,1807 RIZKY ALPIANSYAH RAMADHAN,cancel gojek ,Selesai
+Tidak Berkategori,[ ] Box Combo JBC,BoxJb1,Unla,22/03/2026,Unla-00083,Kadaluarsa,1986 MUHAMMAD ARZUAN MOHRIM,1,pcs,N/A,1986 MUHAMMAD ARZUAN MOHRIM,sudah melewati holding (shift opening dan shift dinner),Selesai
+Tidak Berkategori,[ ] Box Combo JBC,BoxJb1,Kelapa Dua,29/03/2026,KLP2-00616,Tidak terjual,1242 DWINA RATU JOVITA,6,pcs,N/A,1242 DWINA RATU JOVITA,waste cancel jeongbok,Selesai
+Tidak Berkategori,[ ] Box Combo JBC,BoxJb1,Kelapa Dua,30/03/2026,KLP2-00623,Tidak terjual,1242 DWINA RATU JOVITA,1,pcs,N/A,1242 DWINA RATU JOVITA,waste cancel jeongbok ,Selesai
+`;
+
+// === SECTION 2: CSV PARSER (RFC-4180) ===
+function parseCSVRaw(text) {
+  // Strip BOM
+  if (text.charCodeAt(0) === 0xFEFF) text = text.slice(1);
+  const rows = [];
+  let i = 0, n = text.length;
+  while (i < n) {
+    const row = [];
+    while (i < n) {
+      if (text[i] === '"') {
+        // Quoted field
+        i++;
+        let val = '';
+        while (i < n) {
+          if (text[i] === '"') {
+            if (i + 1 < n && text[i+1] === '"') { val += '"'; i += 2; }
+            else { i++; break; }
+          } else { val += text[i++]; }
+        }
+        row.push(val);
+        if (i < n && text[i] === ',') i++;
+      } else {
+        // Unquoted field
+        let val = '';
+        while (i < n && text[i] !== ',' && text[i] !== '\n' && text[i] !== '\r') val += text[i++];
+        row.push(val.trim());
+        if (i < n && text[i] === ',') i++;
+      }
+      if (i >= n || text[i] === '\n' || text[i] === '\r') break;
+    }
+    // Advance past newline
+    if (i < n && text[i] === '\r') i++;
+    if (i < n && text[i] === '\n') i++;
+    if (row.length > 0 && !(row.length === 1 && row[0] === '')) rows.push(row);
+  }
+  return rows;
+}
+
+function detectHeaderRow(rows) {
+  for (let i = 0; i < rows.length; i++) {
+    if (rows[i].some(c => c.trim() === 'Kategori Produk')) return i;
+  }
+  return -1;
+}
+
+function locationType(lokasiName) {
+  if (lokasiName === 'CK Crisbar Bandung') return 'CK';
+  if (lokasiName === 'DC Crisbar Bandung') return 'DC';
+  if (lokasiName === 'Office Crisbar') return 'Kantor';
+  return 'Outlet';
+}
+
+function parseCost(raw) {
+  if (!raw || raw.trim() === '' || raw.trim().toUpperCase() === 'N/A') return null;
+  const n = parseFloat(raw.replace(/[^\d.,-]/g, '').replace(',', '.'));
+  return isNaN(n) ? null : n;
+}
+
+function parseDate(raw) {
+  if (!raw) return null;
+  const p = raw.trim().split('/');
+  if (p.length === 3) {
+    const d = new Date(+p[2], +p[1]-1, +p[0]);
+    return isNaN(d.getTime()) ? null : d;
+  }
+  return null;
+}
+
+function normaliseRecords(rows, headerIdx) {
+  const hdr = rows[headerIdx].map(h => h.trim());
+  const ci = k => hdr.indexOf(k);
+  const iKat = ci('Kategori Produk'), iNama = ci('Nama Produk'), iKode = ci('Kode Produk');
+  const iLok = ci('Lokasi'), iTgl = ci('Tanggal Tercatat'), iNo = ci('No. Waste');
+  const iAls = ci('Alasan'), iPIC = ci('PIC'), iQty = ci('Qty Waste'), iUnit = ci('Unit');
+  const iBiaya = ci('Perkiraan Biaya'), iDibuat = ci('Dibuat Oleh'), iCat = ci('Catatan'), iStat = ci('Status');
+
+  const active = [], excluded = [], malformed = [];
+  for (let i = headerIdx + 1; i < rows.length; i++) {
+    const r = rows[i];
+    if (r.length < 14) { malformed.push({ lineNo: i + 1, raw: r }); continue; }
+    const rec = {
+      kategori:      r[iKat]   || '',
+      namaProduk:    r[iNama]  || '',
+      kodeProduk:    r[iKode]  || '',
+      lokasi:        r[iLok]   || '',
+      tanggal:       parseDate(r[iTgl]),
+      tanggalRaw:    r[iTgl]   || '',
+      noWaste:       r[iNo]    || '',
+      alasan:        r[iAls]   || '',
+      pic:           r[iPIC]   || '',
+      qtyRaw:        r[iQty]   || '',
+      qty:           parseFloat(r[iQty]) || null,
+      unit:          r[iUnit]  || '',
+      biaya:         parseCost(r[iBiaya]),
+      biayaRaw:      r[iBiaya] || '',
+      dibuatOleh:    r[iDibuat]|| '',
+      catatan:       r[iCat]   || '',
+      status:        r[iStat]  || '',
+      locationType:  locationType(r[iLok] || '')
+    };
+    if (rec.status === 'Batal') excluded.push(rec);
+    else active.push(rec);
+  }
+  return { active, excluded, malformed };
+}
+
+// === SECTION 3: GLOBAL STATE ===
+let allRecords = [], active = [], excluded = [], malformed = [];
+let filteredRecords = [];
+
+const FS = {
+  kategori: 'Bahan Baku',
+  status:   'Selesai',
+  group:    '',
+  lokasi:   [],
+  alasan:   [],
+  produk:   [],
+  dateFrom: null,
+  dateTo:   null,
+  tableSearch: ''
+};
+let tableState = { page: 1, sortCol: 'biaya', sortDir: -1 };
+let c1Mode = 'cost', c4Mode = 'cost';
+
+// === SECTION 4: FILTER ENGINE ===
+function applyFilters(recs, fs) {
+  return recs.filter(r => {
+    if (fs.kategori && r.kategori !== fs.kategori) return false;
+    if (fs.status   && r.status   !== fs.status)   return false;
+    if (fs.group    && r.locationType !== fs.group) return false;
+    if (fs.lokasi.length   && !fs.lokasi.includes(r.lokasi))     return false;
+    if (fs.alasan.length   && !fs.alasan.includes(r.alasan))     return false;
+    if (fs.produk.length   && !fs.produk.includes(r.namaProduk)) return false;
+    if (fs.dateFrom && r.tanggal && r.tanggal < fs.dateFrom)     return false;
+    if (fs.dateTo   && r.tanggal && r.tanggal > fs.dateTo)       return false;
+    return true;
+  });
+}
+
+function tableSearch(recs, q) {
+  if (!q) return recs;
+  const lq = q.toLowerCase();
+  return recs.filter(r =>
+    r.namaProduk.toLowerCase().includes(lq) ||
+    r.noWaste.toLowerCase().includes(lq) ||
+    r.pic.toLowerCase().includes(lq) ||
+    r.lokasi.toLowerCase().includes(lq)
+  );
+}
+
+// === SECTION 5: KPI ENGINE ===
+function computeKPIs(recs) {
+  const noWasteSet = new Set(), skuSet = new Set();
+  let totalCost = 0, missingCostCount = 0;
+  const costByAlasan = {}, rowsByAlasan = {};
+  const costByLokasi = {}, rowsByLokasi = {};
+  const costByDate   = {}, rowsByDate   = {};
+  const costBySKU    = {}, rowsBySKU    = {};
+
+  recs.forEach(r => {
+    noWasteSet.add(r.noWaste);
+    skuSet.add(r.kodeProduk);
+    if (r.biaya === null) { missingCostCount++; }
+    else if (r.biaya > 0) { totalCost += r.biaya; }
+
+    const als = r.alasan || 'Tidak Diketahui';
+    costByAlasan[als]  = (costByAlasan[als]  || 0) + (r.biaya || 0);
+    rowsByAlasan[als]  = (rowsByAlasan[als]  || 0) + 1;
+
+    const lok = r.lokasi;
+    costByLokasi[lok]  = (costByLokasi[lok]  || 0) + (r.biaya || 0);
+    rowsByLokasi[lok]  = (rowsByLokasi[lok]  || 0) + 1;
+
+    const dk = r.tanggal ? r.tanggal.getDate() : 0;
+    if (dk > 0) {
+      costByDate[dk] = (costByDate[dk] || 0) + (r.biaya || 0);
+      rowsByDate[dk] = (rowsByDate[dk] || 0) + 1;
+    }
+
+    const sku = r.namaProduk;
+    costBySKU[sku] = (costBySKU[sku] || 0) + (r.biaya || 0);
+    rowsBySKU[sku] = (rowsBySKU[sku] || 0) + 1;
+  });
+
+  return {
+    totalCost, missingCostCount,
+    totalRows: recs.length,
+    uniqueDocuments: noWasteSet.size,
+    uniqueSKUs: skuSet.size,
+    costByAlasan, rowsByAlasan,
+    costByLokasi, rowsByLokasi,
+    costByDate,   rowsByDate,
+    costBySKU,    rowsBySKU
+  };
+}
+
+// === SECTION 6: FORMATTERS ===
+const fmtIDR = v => new Intl.NumberFormat('id-ID',{style:'currency',currency:'IDR',maximumFractionDigits:0}).format(v);
+const fmtNum = v => new Intl.NumberFormat('id-ID').format(v);
+
+// === SECTION 7: RENDER KPI CARDS ===
+function renderKPI(kpis) {
+  const strip = document.getElementById('kpi-strip');
+  strip.innerHTML = `
+    <div class="kpi-card">
+      <div class="kpi-label">Total Estimasi Biaya</div>
+      <div class="kpi-value">${fmtIDR(kpis.totalCost)}</div>
+      <div class="kpi-sub">${fmtNum(kpis.totalRows)} baris | ${kpis.uniqueDocuments} dokumen waste</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Dokumen Waste Unik</div>
+      <div class="kpi-value">${fmtNum(kpis.uniqueDocuments)}</div>
+      <div class="kpi-sub">No. Waste distink</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Produk (SKU) Distink</div>
+      <div class="kpi-value">${fmtNum(kpis.uniqueSKUs)}</div>
+      <div class="kpi-sub">Kode produk unik</div>
+    </div>
+    <div class="kpi-card alert-card">
+      <div class="kpi-label">Biaya Tidak Terestimasi</div>
+      <div class="kpi-value" style="color:var(--amber)">${kpis.missingCostCount}</div>
+      <div class="kpi-sub">Baris dengan N/A &mdash; biaya aktual lebih tinggi</div>
+    </div>`;
+}
+
+// === SECTION 8: CHART HELPERS ===
+// Orange-lead + turquoise-accented palette matching new design tokens
+const PALETTE = ['#ff793b','#22d3c8','#60a5fa','#f87171','#a78bfa','#34d399','#fbbf24','#fb923c','#38bdf8','#4ade80'];
+const DONUT_COLORS = ['#ff793b','#22d3c8','#60a5fa','#f87171','#a78bfa','#34d399','#fbbf24','#fb923c','#818cf8','#2dd4bf'];
+
+function setupCanvas(canvas) {
+  const wrap = canvas.parentElement;
+  const dpr  = window.devicePixelRatio || 1;
+  const W    = wrap.clientWidth  || 400;
+  const H    = wrap.clientHeight || 220;
+  canvas.width  = W * dpr;
+  canvas.height = H * dpr;
+  canvas.style.width  = W + 'px';
+  canvas.style.height = H + 'px';
+  const ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+  return { ctx, W, H };
+}
+
+function clearChart(canvas) {
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+}
+
+// Tooltip
+const TT = document.getElementById('tooltip');
+function showTip(e, text) {
+  TT.style.display = 'block';
+  TT.textContent   = text;
+  TT.style.left    = (e.clientX + 14) + 'px';
+  TT.style.top     = (e.clientY - 28) + 'px';
+}
+function hideTip() { TT.style.display = 'none'; }
+
+// === C1: DAILY TREND BAR ===
+let c1HitRects = [];
+function drawTrendBar(kpis, mode) {
+  const canvas = document.getElementById('c1');
+  const { ctx, W, H } = setupCanvas(canvas);
+  c1HitRects = [];
+  const data = [], labels = [];
+  for (let d = 1; d <= 31; d++) {
+    const v = mode === 'cost' ? (kpis.costByDate[d] || 0) : (kpis.rowsByDate[d] || 0);
+    data.push(v); labels.push(d);
+  }
+  const pad = { t:12, r:10, b:30, l: mode==='cost' ? 72 : 40 };
+  const cW = W - pad.l - pad.r;
+  const cH = H - pad.t - pad.b;
+  const maxV = Math.max(...data, 1);
+  const bW = Math.max(2, Math.floor(cW / 31) - 2);
+
+  ctx.fillStyle = '#7a90b4';
+  ctx.font = '10px system-ui';
+  ctx.textAlign = 'center';
+
+  data.forEach((v, i) => {
+    const x = pad.l + i * (cW / 31) + (cW / 31) / 2;
+    const bH = cH * v / maxV;
+    const y  = pad.t + cH - bH;
+    ctx.fillStyle = v > 0 ? '#ff793b' : '#1f2f48';
+    ctx.fillRect(x - bW/2, y, bW, bH);
+    c1HitRects.push({ x: x - bW/2 - 4, y: pad.t, w: bW + 8, h: cH, label: `${i+1} Mar`, value: v });
+    // X labels — every 5 days
+    if ((i+1) % 5 === 0 || i === 0 || i === 30) {
+      ctx.fillStyle = '#7a90b4';
+      ctx.fillText(String(i+1), x, H - pad.b + 12);
+    }
+  });
+
+  // Y axis ticks
+  ctx.textAlign = 'right';
+  ctx.font = '9px system-ui';
+  for (let t = 0; t <= 4; t++) {
+    const y = pad.t + cH * (1 - t/4);
+    const v = maxV * t / 4;
+    ctx.fillStyle = '#3d5070';
+    ctx.fillRect(pad.l - 4, y, cW + 4, .5);
+    ctx.fillStyle = '#7a90b4';
+    const label = mode === 'cost' ? (v >= 1e6 ? (v/1e6).toFixed(1)+'jt' : (v/1e3).toFixed(0)+'rb') : Math.round(v).toString();
+    ctx.fillText(label, pad.l - 6, y + 3);
+  }
+}
+
+// === C2: TOP LOKASI HORIZONTAL BAR ===
+let c2HitRects = [];
+function drawHBarLokasi(kpis) {
+  const canvas = document.getElementById('c2');
+  const { ctx, W, H } = setupCanvas(canvas);
+  c2HitRects = [];
+
+  const entries = Object.entries(kpis.costByLokasi)
+    .sort((a, b) => b[1] - a[1]).slice(0, 12);
+  if (!entries.length) { clearChart(canvas); return; }
+
+  const pad = { t:8, r:14, b:8, l:110 };
+  const cW = W - pad.l - pad.r;
+  const cH = H - pad.t - pad.b;
+  const bH = Math.max(6, Math.floor(cH / entries.length) - 4);
+  const maxV = entries[0][1] || 1;
+
+  ctx.font = '10px system-ui';
+  entries.forEach(([lok, cost], i) => {
+    const y = pad.t + i * (cH / entries.length) + (cH / entries.length - bH) / 2;
+    const bW = cW * cost / maxV;
+    ctx.fillStyle = PALETTE[i % PALETTE.length];
+    ctx.fillRect(pad.l, y, bW, bH);
+    // Location label
+    ctx.fillStyle = '#7a90b4';
+    ctx.textAlign = 'right';
+    const shortLok = lok.length > 16 ? lok.slice(0, 15) + '…' : lok;
+    ctx.fillText(shortLok, pad.l - 4, y + bH / 2 + 3.5);
+    // Value label
+    ctx.fillStyle = '#dce6f5';
+    ctx.textAlign = 'left';
+    const label = cost >= 1e6 ? (cost/1e6).toFixed(2)+'jt' : (cost/1e3).toFixed(0)+'rb';
+    ctx.fillText(label, pad.l + bW + 3, y + bH/2 + 3.5);
+    c2HitRects.push({ x: pad.l, y, w: bW, h: bH, lok, cost });
+  });
+}
+
+// === C3: DONUT — ALASAN ===
+let c3HitArcs = [];
+function drawDonut(kpis) {
+  const canvas = document.getElementById('c3');
+  const { ctx, W, H } = setupCanvas(canvas);
+  c3HitArcs = [];
+
+  const entries = Object.entries(kpis.costByAlasan).sort((a,b) => b[1]-a[1]);
+  const total   = entries.reduce((s,[,v]) => s+v, 0);
+  if (!entries.length || total === 0) { clearChart(canvas); return; }
+
+  const cx = W / 2, cy = H / 2;
+  const outerR = Math.min(cx, cy) - 8;
+  const innerR = outerR * 0.52;
+  let angle = -Math.PI / 2;
+
+  entries.forEach(([als, cost], i) => {
+    const sweep = (cost / total) * 2 * Math.PI;
+    const col   = DONUT_COLORS[i % DONUT_COLORS.length];
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.arc(cx, cy, outerR, angle, angle + sweep);
+    ctx.closePath();
+    ctx.fillStyle = col;
+    ctx.fill();
+    // Inner hole
+    ctx.beginPath();
+    ctx.arc(cx, cy, innerR, 0, 2*Math.PI);
+    ctx.fillStyle = '#111c2d';
+    ctx.fill();
+    c3HitArcs.push({ startAngle: angle, endAngle: angle + sweep, cx, cy, outerR, innerR, als, cost, col });
+    angle += sweep;
+  });
+
+  // Centre label
+  ctx.fillStyle = '#dce6f5';
+  ctx.font = 'bold 11px system-ui';
+  ctx.textAlign = 'center';
+  ctx.fillText('Alasan', cx, cy - 4);
+  ctx.font = '10px system-ui';
+  ctx.fillStyle = '#7a90b4';
+  ctx.fillText('Waste', cx, cy + 10);
+
+  // Legend
+  const legend = document.getElementById('donut-legend');
+  legend.innerHTML = entries.map(([als, cost], i) => {
+    const pct = total > 0 ? (cost/total*100).toFixed(1) : '0.0';
+    return `<div class="legend-item"><div class="legend-dot" style="background:${DONUT_COLORS[i%DONUT_COLORS.length]}"></div>${escH(als)} ${pct}%</div>`;
+  }).join('');
+}
+
+// === C4: TOP SKU HORIZONTAL BAR ===
+let c4HitRects = [];
+function drawHBarSKU(kpis, mode) {
+  const canvas = document.getElementById('c4');
+  const { ctx, W, H } = setupCanvas(canvas);
+  c4HitRects = [];
+
+  const mapData = mode === 'cost' ? kpis.costBySKU : kpis.rowsBySKU;
+  const entries = Object.entries(mapData).sort((a,b) => b[1]-a[1]).slice(0, 10);
+  if (!entries.length) { clearChart(canvas); return; }
+
+  const pad = { t:8, r:50, b:8, l:130 };
+  const cW = W - pad.l - pad.r;
+  const cH = H - pad.t - pad.b;
+  const bH = Math.max(6, Math.floor(cH / entries.length) - 4);
+  const maxV = entries[0][1] || 1;
+
+  ctx.font = '10px system-ui';
+  entries.forEach(([sku, v], i) => {
+    const y  = pad.t + i * (cH / entries.length) + (cH / entries.length - bH) / 2;
+    const bW = cW * v / maxV;
+    ctx.fillStyle = PALETTE[i % PALETTE.length];
+    ctx.fillRect(pad.l, y, bW, bH);
+    ctx.fillStyle = '#7a90b4';
+    ctx.textAlign = 'right';
+    const shortN = sku.length > 18 ? sku.slice(0, 17) + '…' : sku;
+    ctx.fillText(shortN, pad.l - 4, y + bH/2 + 3.5);
+    ctx.fillStyle = '#dce6f5';
+    ctx.textAlign = 'left';
+    const lbl = mode === 'cost'
+      ? (v >= 1e6 ? (v/1e6).toFixed(2)+'jt' : (v/1e3).toFixed(0)+'rb')
+      : fmtNum(v);
+    ctx.fillText(lbl, pad.l + bW + 3, y + bH/2 + 3.5);
+    c4HitRects.push({ x: pad.l, y, w: bW, h: bH, sku, v });
+  });
+}
+
+function renderCharts(kpis) {
+  drawTrendBar(kpis, c1Mode);
+  drawHBarLokasi(kpis);
+  drawDonut(kpis);
+  drawHBarSKU(kpis, c4Mode);
+}
+
+// === SECTION 9: INSIGHT ENGINE ===
+function generateInsights(recs, kpis) {
+  const insights = [];
+  const total = kpis.totalCost || 1;
+
+  // R1: Alasan dominan > 35% biaya
+  Object.entries(kpis.costByAlasan).forEach(([als, cost]) => {
+    const pct = cost / total * 100;
+    if (pct > 35) {
+      insights.push({ level:'warn', text:`"${als}" mendominasi biaya waste: ${pct.toFixed(1)}% (${fmtIDR(cost)}) — evaluasi pengendalian segera.` });
+    }
+  });
+
+  // R2: Lokasi biaya > 2× median
+  const costs = Object.values(kpis.costByLokasi).sort((a,b) => a-b);
+  if (costs.length > 2) {
+    const mid   = Math.floor(costs.length / 2);
+    const median = costs.length % 2 === 0 ? (costs[mid-1]+costs[mid])/2 : costs[mid];
+    Object.entries(kpis.costByLokasi).forEach(([lok, cost]) => {
+      if (median > 0 && cost > 2 * median) {
+        const mult = (cost / median).toFixed(1);
+        insights.push({ level:'warn', text:`Lokasi "${lok}" mencatat biaya waste ${mult}× di atas rata-rata median (${fmtIDR(cost)}).` });
+      }
+    });
+  }
+
+  // R3: Missing cost > 0
+  if (kpis.missingCostCount > 0) {
+    insights.push({ level:'info', text:`${kpis.missingCostCount} baris tidak memiliki estimasi biaya (N/A) — total biaya aktual lebih tinggi dari yang tertera.` });
+  }
+
+  // R4: Top SKU > 25% biaya
+  const topSKUEntry = Object.entries(kpis.costBySKU).sort((a,b) => b[1]-a[1])[0];
+  if (topSKUEntry) {
+    const [sku, cost] = topSKUEntry;
+    const pct = cost / total * 100;
+    if (pct > 25) {
+      const rows = kpis.rowsBySKU[sku] || 0;
+      insights.push({ level:'warn', text:`Produk "${sku}" mendominasi: ${pct.toFixed(1)}% dari total biaya (${fmtIDR(cost)}, ${rows} baris) — cek rantai pasokan & holding time.` });
+    }
+  }
+
+  // R5: Tidak terjual > 30% count
+  const tidakRows = kpis.rowsByAlasan['Tidak terjual'] || 0;
+  if (kpis.totalRows > 0 && (tidakRows / kpis.totalRows * 100) > 30) {
+    const pct = (tidakRows / kpis.totalRows * 100).toFixed(1);
+    insights.push({ level:'info', text:`${tidakRows} baris (${pct}%) waste beralasan "Tidak terjual" — potensi evaluasi manajemen produksi dan demand planning.` });
+  }
+
+  // R6: Cancel Merchant sebagai Alasan
+  if (kpis.rowsByAlasan['Cancel Merchant']) {
+    const n = kpis.rowsByAlasan['Cancel Merchant'];
+    const c = kpis.costByAlasan['Cancel Merchant'] || 0;
+    insights.push({ level:'info', text:`Terdapat ${n} insiden "Cancel Merchant" (${fmtIDR(c)}) — perlu koordinasi dengan tim delivery & pemantauan platform online.` });
+  }
+
+  if (insights.length === 0) {
+    insights.push({ level:'ok', text:'Tidak ada anomali signifikan terdeteksi pada filter aktif.' });
+  }
+
+  return insights;
+}
+
+function renderInsights(recs, kpis) {
+  const list = document.getElementById('insight-list');
+  const items = generateInsights(recs, kpis);
+  list.innerHTML = items.map(it => {
+    const icon = it.level==='warn' ? '⚠' : it.level==='ok' ? '✓' : 'ℹ';
+    return `<div class="insight-item ${it.level}"><span class="insight-icon">${icon}</span><span>${escH(it.text)}</span></div>`;
+  }).join('');
+}
+
+// === SECTION 10: DETAIL TABLE ===
+const TBL_COLS = [
+  { key:'tanggalRaw', label:'Tanggal',    sortable:true  },
+  { key:'noWaste',    label:'No. Waste',  sortable:true  },
+  { key:'namaProduk', label:'Produk',     sortable:true  },
+  { key:'lokasi',     label:'Lokasi',     sortable:true  },
+  { key:'alasan',     label:'Alasan',     sortable:true  },
+  { key:'qty',        label:'Qty',        sortable:false },
+  { key:'status',     label:'Status',     sortable:true  },
+  { key:'biaya',      label:'Est. Biaya', sortable:true  }
+];
+const PAGE_SIZE = 25;
+
+function alasanBadge(als) {
+  const m = {
+    'Rusak':                       'b-rusak',
+    'Tidak terjual':               'b-tidak-terjual',
+    'Kadaluarsa':                  'b-kadaluarsa',
+    'Kesalahan':                   'b-kesalahan',
+    'Training Trainer':            'b-training',
+    'Penelitian & Pengembangan':   'b-rnd',
+    'Test Food / RM':              'b-test',
+    'Cancel Merchant':             'b-cancel'
+  };
+  const cls = m[als] || 'b-other';
+  return `<span class="badge ${cls}">${escH(als)}</span>`;
+}
+
+function statusBadge(s) {
+  return s === 'Selesai'
+    ? `<span class="badge b-selesai">${escH(s)}</span>`
+    : `<span class="badge b-batal">${escH(s)}</span>`;
+}
+
+function sortRecords(recs, col, dir) {
+  return [...recs].sort((a, b) => {
+    let av = a[col], bv = b[col];
+    if (col === 'biaya') { av = av ?? -Infinity; bv = bv ?? -Infinity; }
+    if (typeof av === 'number' && typeof bv === 'number') return dir * (av - bv);
+    if (av instanceof Date && bv instanceof Date) return dir * (av - bv);
+    return dir * String(av||'').localeCompare(String(bv||''), 'id');
+  });
+}
+
+function renderTableHead() {
+  const thead = document.getElementById('tbl-head');
+  const { sortCol, sortDir } = tableState;
+  thead.innerHTML = '<tr>' + TBL_COLS.map(col => {
+    const isSorted = col.key === sortCol;
+    const arrow    = isSorted ? (sortDir === 1 ? ' ▲' : ' ▼') : '';
+    const cls      = col.sortable ? (isSorted ? ' sorted' : '') : ' no-sort';
+    const click    = col.sortable ? `onclick="onSortClick('${col.key}')"` : '';
+    return `<th class="${cls}" ${click}>${escH(col.label)}${isSorted ? `<span class="sort-arrow">${arrow}</span>` : ''}</th>`;
+  }).join('') + '</tr>';
+}
+
+function renderTableBody(recs) {
+  const tbody  = document.getElementById('tbl-body');
+  if (!recs.length) {
+    tbody.innerHTML = `<tr><td colspan="${TBL_COLS.length}" style="text-align:center;color:var(--text-muted);padding:1.5rem">Tidak ada data sesuai filter.</td></tr>`;
+    return;
+  }
+  const sorted  = sortRecords(recs, tableState.sortCol, tableState.sortDir);
+  const start   = (tableState.page - 1) * PAGE_SIZE;
+  const page    = sorted.slice(start, start + PAGE_SIZE);
+  tbody.innerHTML = page.map(r => {
+    const isNA = r.biaya === null;
+    const biayaCell = isNA
+      ? `<span class="na-cost">N/A</span>`
+      : fmtIDR(r.biaya);
+    return `<tr class="${isNA ? 'na-row' : ''}">
+      <td>${escH(r.tanggalRaw)}</td>
+      <td style="font-family:monospace;font-size:.72rem">${escH(r.noWaste)}</td>
+      <td>${escH(r.namaProduk)}</td>
+      <td>${escH(r.lokasi)}</td>
+      <td>${alasanBadge(r.alasan)}</td>
+      <td>${escH(r.qtyRaw)} <span style="color:var(--text-muted);font-size:.7rem">${escH(r.unit)}</span></td>
+      <td>${statusBadge(r.status)}</td>
+      <td style="text-align:right">${biayaCell}</td>
+    </tr>`;
+  }).join('');
+}
+
+function renderPagination(total) {
+  const pageEl = document.getElementById('pagination');
+  const pages  = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  const cur    = tableState.page;
+  document.getElementById('tbl-title').textContent = `Detail Waste (${fmtNum(total)} baris)`;
+
+  let btns = '';
+  const pRange = [];
+  if (pages <= 7) { for (let i=1;i<=pages;i++) pRange.push(i); }
+  else {
+    pRange.push(1);
+    if (cur > 3) pRange.push('…');
+    for (let i=Math.max(2,cur-1); i<=Math.min(pages-1,cur+1); i++) pRange.push(i);
+    if (cur < pages-2) pRange.push('…');
+    pRange.push(pages);
+  }
+  btns = pRange.map(p => p === '…'
+    ? `<span style="padding:0 .2rem;color:var(--text-dim)">…</span>`
+    : `<button class="page-btn${p===cur?' cur':''}" onclick="gotoPage(${p})">${p}</button>`
+  ).join('');
+
+  pageEl.innerHTML = `<span>Halaman ${cur} dari ${pages}</span>
+    <div class="pagination-controls">
+      <button class="page-btn" onclick="gotoPage(${cur-1})" ${cur===1?'disabled':''}>&#8592;</button>
+      ${btns}
+      <button class="page-btn" onclick="gotoPage(${cur+1})" ${cur===pages?'disabled':''}>&#8594;</button>
+    </div>`;
+}
+
+function renderTable(recs) {
+  const searched = tableSearch(recs, FS.tableSearch);
+  renderTableHead();
+  renderTableBody(searched);
+  renderPagination(searched.length);
+}
+
+function onSortClick(col) {
+  if (tableState.sortCol === col) tableState.sortDir *= -1;
+  else { tableState.sortCol = col; tableState.sortDir = -1; }
+  tableState.page = 1;
+  renderTable(filteredRecords);
+}
+
+function gotoPage(p) {
+  const searched = tableSearch(filteredRecords, FS.tableSearch);
+  const pages    = Math.ceil(searched.length / PAGE_SIZE);
+  tableState.page = Math.max(1, Math.min(p, pages));
+  renderTable(filteredRecords);
+}
+
+// === SECTION 11: CSV EXPORT ===
+function sanitizeCell(v) {
+  const s = v == null ? '' : String(v);
+  if (/^[=+\-@]/.test(s)) return "'" + s;
+  return s.includes(',') || s.includes('"') || s.includes('\n')
+    ? '"' + s.replace(/"/g, '""') + '"'
+    : s;
+}
+
+function exportCSV(recs) {
+  const cols = ['Kategori Produk','Nama Produk','Kode Produk','Lokasi','Tanggal Tercatat',
+    'No. Waste','Alasan','PIC','Qty Waste','Unit','Perkiraan Biaya','Dibuat Oleh','Catatan','Status','Tipe Lokasi'];
+  const header = cols.join(',');
+  const rows = recs.map(r => [
+    r.kategori, r.namaProduk, r.kodeProduk, r.lokasi, r.tanggalRaw,
+    r.noWaste, r.alasan, r.pic, r.qtyRaw, r.unit,
+    r.biayaRaw, r.dibuatOleh, r.catatan, r.status, r.locationType
+  ].map(sanitizeCell).join(','));
+  const csv = '\uFEFF' + header + '\r\n' + rows.join('\r\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  const d    = new Date();
+  const ds   = `${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}`;
+  a.href = url; a.download = `crisbar_waste_export_${ds}.csv`;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+// === SECTION 12: DATA QUALITY PAGE ===
+function computeQualityStats() {
+  const all    = [...active, ...excluded];
+  const naAll  = all.filter(r => r.biaya === null);
+  const naBBSelesai  = active.filter(r => r.kategori === 'Bahan Baku' && r.biaya === null);
+  const zeroBBSelesai = active.filter(r => r.kategori === 'Bahan Baku' && r.biaya === 0);
+  const naTidakBerk  = active.filter(r => r.kategori === 'Tidak Berkategori' && r.biaya === null);
+  const naBatal      = excluded.filter(r => r.biaya === null);
+
+  // Duplicate No. Waste counts
+  const noMap = {};
+  active.forEach(r => { noMap[r.noWaste] = (noMap[r.noWaste]||0) + 1; });
+  const dups = Object.entries(noMap).filter(([,c]) => c > 1).sort((a,b) => b[1]-a[1]);
+
+  return { naAll, naBBSelesai, zeroBBSelesai, naTidakBerk, naBatal, dups };
+}
+
+function renderQuality() {
+  const qs = computeQualityStats();
+  const all = [...active, ...excluded];
+
+  // Stat cards
+  document.getElementById('quality-grid').innerHTML = `
+    <div class="quality-card">
+      <h3>Total Baris Sumber</h3>
+      <div class="quality-stat">${all.length}</div>
+      <div class="quality-stat-sub">Dari file CSV (di luar header &amp; preamble)</div>
+    </div>
+    <div class="quality-card">
+      <h3>Baris Aktif (Selesai)</h3>
+      <div class="quality-stat" style="color:var(--green)">${active.length}</div>
+      <div class="quality-stat-sub">Digunakan dalam KPI dashboard</div>
+    </div>
+    <div class="quality-card">
+      <h3>Baris Dikecualikan</h3>
+      <div class="quality-stat" style="color:var(--amber)">${excluded.length}</div>
+      <div class="quality-stat-sub">Status "Batal" — tidak masuk KPI</div>
+    </div>
+    <div class="quality-card">
+      <h3>Baris Malformed</h3>
+      <div class="quality-stat" style="color:${malformed.length > 0 ? 'var(--red)' : 'var(--green)'}">${malformed.length}</div>
+      <div class="quality-stat-sub">Kurang dari 14 kolom setelah parsing</div>
+    </div>
+    <div class="quality-card">
+      <h3>Biaya N/A (Aktif)</h3>
+      <div class="quality-stat" style="color:var(--amber)">${qs.naBBSelesai.length + qs.naTidakBerk.length}</div>
+      <div class="quality-stat-sub">Tidak termasuk dalam total biaya</div>
+    </div>
+    <div class="quality-card">
+      <h3>No. Waste Duplikat</h3>
+      <div class="quality-stat" style="color:var(--blue)">${qs.dups.length}</div>
+      <div class="quality-stat-sub">No. Waste dengan lebih dari 1 item (normal)</div>
+    </div>`;
+
+  // Breakdown section
+  const bb = document.getElementById('quality-breakdown');
+  bb.innerHTML = `<h3>Rincian Anomali Biaya</h3>
+    <div class="qrow"><span class="ql">Bahan Baku Selesai — Biaya N/A</span><span class="qr warn">${qs.naBBSelesai.length} baris</span></div>
+    <div class="qrow"><span class="ql">Bahan Baku Selesai — Biaya = 0</span><span class="qr">${qs.zeroBBSelesai.length} baris</span></div>
+    <div class="qrow"><span class="ql">Tidak Berkategori (Selesai) — Biaya N/A</span><span class="qr warn">${qs.naTidakBerk.length} baris</span></div>
+    <div class="qrow"><span class="ql">Bahan Baku Batal — Biaya N/A</span><span class="qr">${qs.naBatal.length} baris (dikecualikan dari KPI)</span></div>
+    <div class="qrow"><span class="ql">Baris Dikecualikan (Status Batal)</span><span class="qr">
+      ${excluded.map(r => escH(r.noWaste + ' — ' + r.namaProduk + ' (' + r.lokasi + ')')).join(', ')}
+    </span></div>
+    <div class="quality-note">Total biaya pada dashboard hanya menjumlahkan baris dengan nilai numerik pada kolom Perkiraan Biaya dan Status = Selesai. Baris dengan N/A tidak dimasukkan ke dalam kalkulasi.</div>`;
+
+  // Duplicate No. Waste
+  const dp = document.getElementById('quality-dups');
+  dp.innerHTML = `<h3>No. Waste dengan Banyak Item (Top 20)</h3>
+    <div class="quality-note" style="margin-top:0;margin-bottom:.5rem">Normal dalam operasional — satu insiden waste bisa mencakup lebih dari satu produk.</div>
+    <div class="dup-list">${qs.dups.slice(0,20).map(([id, ct]) =>
+      `<div class="dup-item"><span class="di-id">${escH(id)}</span><span class="di-ct">${ct} item</span></div>`
+    ).join('')}</div>`;
+
+  // Malformed rows
+  const mf = document.getElementById('quality-malformed');
+  mf.innerHTML = `<h3>Baris Malformed (Kurang dari 14 Kolom)</h3>
+    ${malformed.length === 0
+      ? '<p style="font-size:.76rem;color:var(--green)">&#10003; Tidak ada baris malformed — semua data valid.</p>'
+      : malformed.map(m => `<div class="qrow"><span class="ql">Baris ${m.lineNo}</span><span class="qr warn">${escH(m.raw.join(' | '))}</span></div>`).join('')
+    }`;
+}
+
+// === SECTION 13: UTILITY ===
+function escH(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// === SECTION 14: POPULATE FILTER DROPDOWNS ===
+function populateSidebar() {
+  const lokasiList  = [...new Set(active.map(r => r.lokasi))].sort((a,b) => a.localeCompare(b,'id'));
+  const alasanList  = [...new Set(active.map(r => r.alasan))].sort();
+  const produkList  = [...new Set(active.map(r => r.namaProduk))].sort((a,b) => a.localeCompare(b,'id'));
+
+  function fillSelect(id, items) {
+    const el = document.getElementById(id);
+    el.innerHTML = items.map(v => `<option value="${escH(v)}">${escH(v)}</option>`).join('');
+  }
+  fillSelect('f-lokasi',  lokasiList);
+  fillSelect('f-alasan',  alasanList);
+  fillSelect('f-produk',  produkList);
+}
+
+// === SECTION 15: RENDER ALL ===
+function renderAll() {
+  filteredRecords = applyFilters(active, FS);
+  const kpis = computeKPIs(filteredRecords);
+  renderKPI(kpis);
+  renderCharts(kpis);
+  renderInsights(filteredRecords, kpis);
+  tableState.page = 1;
+  renderTable(filteredRecords);
+}
+
+// === SECTION 16: BOOT & ASSERTIONS ===
+function showBanner(msg) {
+  const b = document.getElementById('parse-banner');
+  b.textContent = msg;
+  b.style.display = 'block';
+}
+
+function runAssertions() {
+  const all = [...active, ...excluded];
+  const warns = [];
+  if (all.length !== 608)       warns.push('allRecords=' + all.length + ' (harapkan 608)');
+  if (active.length !== 607)    warns.push('active=' + active.length + ' (harapkan 607)');
+  if (excluded.length !== 1)    warns.push('excluded=' + excluded.length + ' (harapkan 1)');
+  if (warns.length) showBanner('⚠ Peringatan data: ' + warns.join('; '));
+  console.log('[Crisbar] allRecords=' + all.length + ', active=' + active.length + ', excluded=' + excluded.length + ', malformed=' + malformed.length);
+}
+
+function loadCSV(text) {
+  const rows = parseCSVRaw(text);
+  const hIdx = detectHeaderRow(rows);
+  if (hIdx < 0) { showBanner('⚠ Header kolom tidak ditemukan dalam file CSV.'); return; }
+  const result = normaliseRecords(rows, hIdx);
+  active   = result.active;
+  excluded = result.excluded;
+  malformed= result.malformed;
+  runAssertions();
+  populateSidebar();
+  renderAll();
+  renderQuality();
+}
+
+// === EVENT WIRING ===
+document.addEventListener('DOMContentLoaded', () => {
+  // Tab navigation
+  document.querySelectorAll('.nav-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+      tab.classList.add('active');
+      document.getElementById(tab.dataset.tab + '-page').classList.add('active');
+    });
+  });
+
+  // File import
+  document.getElementById('csv-import').addEventListener('change', e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => loadCSV(ev.target.result);
+    reader.readAsText(file, 'UTF-8');
+  });
+
+  // Export
+  document.getElementById('btn-export').addEventListener('click', () => {
+    exportCSV(tableSearch(filteredRecords, FS.tableSearch));
+  });
+
+  // Reset
+  document.getElementById('btn-reset').addEventListener('click', () => {
+    FS.kategori = 'Bahan Baku'; FS.status = 'Selesai'; FS.group = '';
+    FS.lokasi = []; FS.alasan = []; FS.produk = [];
+    FS.dateFrom = null; FS.dateTo = null; FS.tableSearch = '';
+    document.getElementById('f-kategori').value   = 'Bahan Baku';
+    document.getElementById('f-status').value     = 'Selesai';
+    document.getElementById('f-group').value      = '';
+    document.getElementById('f-date-from').value  = '';
+    document.getElementById('f-date-to').value    = '';
+    document.getElementById('tbl-search').value   = '';
+    Array.from(document.getElementById('f-lokasi').options).forEach(o => o.selected = false);
+    Array.from(document.getElementById('f-alasan').options).forEach(o => o.selected = false);
+    Array.from(document.getElementById('f-produk').options).forEach(o => o.selected = false);
+    tableState = { page:1, sortCol:'biaya', sortDir:-1 };
+    renderAll();
+  });
+
+  // Filter change helper
+  function getMultiSelect(id) {
+    return Array.from(document.getElementById(id).selectedOptions).map(o => o.value);
+  }
+  function onFilterChange() { tableState.page = 1; renderAll(); }
+
+  document.getElementById('f-kategori').addEventListener('change', e => { FS.kategori = e.target.value; onFilterChange(); });
+  document.getElementById('f-status').addEventListener('change',   e => { FS.status   = e.target.value; onFilterChange(); });
+  document.getElementById('f-group').addEventListener('change',    e => { FS.group    = e.target.value; onFilterChange(); });
+  document.getElementById('f-lokasi').addEventListener('change',   ()=> { FS.lokasi   = getMultiSelect('f-lokasi'); onFilterChange(); });
+  document.getElementById('f-alasan').addEventListener('change',   ()=> { FS.alasan   = getMultiSelect('f-alasan'); onFilterChange(); });
+  document.getElementById('f-produk').addEventListener('change',   ()=> { FS.produk   = getMultiSelect('f-produk'); onFilterChange(); });
+  document.getElementById('f-date-from').addEventListener('change',e => {
+    FS.dateFrom = e.target.value ? new Date(e.target.value) : null; onFilterChange();
+  });
+  document.getElementById('f-date-to').addEventListener('change',  e => {
+    FS.dateTo = e.target.value ? new Date(e.target.value + 'T23:59:59') : null; onFilterChange();
+  });
+  document.getElementById('tbl-search').addEventListener('input', e => {
+    FS.tableSearch = e.target.value; tableState.page = 1; renderTable(filteredRecords);
+  });
+
+  // Chart toggle C1
+  document.getElementById('c1-toggle').querySelectorAll('button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.getElementById('c1-toggle').querySelectorAll('button').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      c1Mode = btn.dataset.m;
+      const kpis = computeKPIs(filteredRecords);
+      drawTrendBar(kpis, c1Mode);
+    });
+  });
+
+  // Chart toggle C4
+  document.getElementById('c4-toggle').querySelectorAll('button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.getElementById('c4-toggle').querySelectorAll('button').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      c4Mode = btn.dataset.m;
+      const kpis = computeKPIs(filteredRecords);
+      drawHBarSKU(kpis, c4Mode);
+    });
+  });
+
+  // Chart tooltips — C1
+  const c1 = document.getElementById('c1');
+  c1.addEventListener('mousemove', e => {
+    const r = c1.getBoundingClientRect();
+    const x = e.clientX - r.left, y = e.clientY - r.top;
+    const hit = c1HitRects.find(h => x >= h.x && x <= h.x+h.w && y >= h.y && y <= h.y+h.h);
+    if (hit) {
+      const val = c1Mode === 'cost' ? fmtIDR(hit.value) : hit.value + ' baris';
+      showTip(e, `${hit.label}: ${val}`);
+    } else hideTip();
+  });
+  c1.addEventListener('mouseleave', hideTip);
+
+  // Chart tooltips — C2
+  const c2 = document.getElementById('c2');
+  c2.addEventListener('mousemove', e => {
+    const r = c2.getBoundingClientRect();
+    const x = e.clientX - r.left, y = e.clientY - r.top;
+    const hit = c2HitRects.find(h => x >= h.x && x <= h.x+h.w && y >= h.y && y <= h.y+h.h);
+    if (hit) showTip(e, `${hit.lok}: ${fmtIDR(hit.cost)}`);
+    else hideTip();
+  });
+  c2.addEventListener('mouseleave', hideTip);
+  c2.addEventListener('click', e => {
+    const r = c2.getBoundingClientRect();
+    const x = e.clientX - r.left, y = e.clientY - r.top;
+    const hit = c2HitRects.find(h => x >= h.x && x <= h.x+h.w && y >= h.y && y <= h.y+h.h);
+    if (hit) {
+      const sel = document.getElementById('f-lokasi');
+      Array.from(sel.options).forEach(o => { o.selected = o.value === hit.lok; });
+      FS.lokasi = [hit.lok]; tableState.page = 1; renderAll();
+    }
+  });
+
+  // Chart tooltips — C3 (donut)
+  const c3 = document.getElementById('c3');
+  c3.addEventListener('mousemove', e => {
+    const r = c3.getBoundingClientRect();
+    const x = e.clientX - r.left, y = e.clientY - r.top;
+    const hit = c3HitArcs.find(h => {
+      const dx = x - h.cx, dy = y - h.cy;
+      const dist = Math.sqrt(dx*dx + dy*dy);
+      if (dist < h.innerR || dist > h.outerR) return false;
+      let ang = Math.atan2(dy, dx);
+      if (ang < -Math.PI/2) ang += 2*Math.PI;
+      let sa = h.startAngle, ea = h.endAngle;
+      if (sa < -Math.PI/2) { sa += 2*Math.PI; ea += 2*Math.PI; }
+      return ang >= sa && ang <= ea;
+    });
+    if (hit) {
+      const kpis = computeKPIs(filteredRecords);
+      const pct  = kpis.totalCost > 0 ? (hit.cost/kpis.totalCost*100).toFixed(1) : '0.0';
+      showTip(e, `${hit.als}: ${fmtIDR(hit.cost)} (${pct}%)`);
+    } else hideTip();
+  });
+  c3.addEventListener('mouseleave', hideTip);
+  c3.addEventListener('click', e => {
+    const r = c3.getBoundingClientRect();
+    const x = e.clientX - r.left, y = e.clientY - r.top;
+    const hit = c3HitArcs.find(h => {
+      const dx = x - h.cx, dy = y - h.cy;
+      const dist = Math.sqrt(dx*dx + dy*dy);
+      if (dist < h.innerR || dist > h.outerR) return false;
+      let ang = Math.atan2(dy, dx);
+      if (ang < -Math.PI/2) ang += 2*Math.PI;
+      let sa = h.startAngle, ea = h.endAngle;
+      if (sa < -Math.PI/2) { sa += 2*Math.PI; ea += 2*Math.PI; }
+      return ang >= sa && ang <= ea;
+    });
+    if (hit) {
+      const sel = document.getElementById('f-alasan');
+      Array.from(sel.options).forEach(o => { o.selected = o.value === hit.als; });
+      FS.alasan = [hit.als]; tableState.page = 1; renderAll();
+    }
+  });
+
+  // Chart tooltips — C4
+  const c4 = document.getElementById('c4');
+  c4.addEventListener('mousemove', e => {
+    const r = c4.getBoundingClientRect();
+    const x = e.clientX - r.left, y = e.clientY - r.top;
+    const hit = c4HitRects.find(h => x >= h.x && x <= h.x+h.w && y >= h.y && y <= h.y+h.h);
+    if (hit) {
+      const val = c4Mode === 'cost' ? fmtIDR(hit.v) : hit.v + ' baris';
+      showTip(e, `${hit.sku}: ${val}`);
+    } else hideTip();
+  });
+  c4.addEventListener('mouseleave', hideTip);
+
+  // ResizeObserver for chart redraw
+  if (typeof ResizeObserver !== 'undefined') {
+    const ro = new ResizeObserver(() => {
+      if (filteredRecords.length > 0) {
+        const kpis = computeKPIs(filteredRecords);
+        renderCharts(kpis);
+      }
+    });
+    ro.observe(document.getElementById('main'));
+  }
+
+  // Initial load from embedded CSV
+  loadCSV(RAW_CSV);
+});
+</script>
+</body>
+</html>
